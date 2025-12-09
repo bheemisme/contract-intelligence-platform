@@ -42,3 +42,9 @@
 ## Development Tools
 
 *   **Ruff**: Used as a linter.
+
+## Logging Configuration
+
+*   **Centralized Logging**: The application uses a centralized logging configuration in `config/log_config.py` with separate configurations for development and production environments.
+*   **Logging Levels**: Different log levels are configured for various modules (api, database, contracts, model) with appropriate handlers for console and rotating file outputs.
+*   **Log Files**: Application logs are written to `logs/app.log` with rotation and backup management.
