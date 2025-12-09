@@ -14,7 +14,7 @@ def fill_schema(contract_path: str, contract: schemas.Contract.__class__) -> sch
         ValueError: If the contract text is not in the expected format.
         RuntimeError: If there is an error in the OpenAI API call.
     """
-
+    
     with open(contract_path, "r", encoding="utf-8") as f:
         contract_text = f.read()
 

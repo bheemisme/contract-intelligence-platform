@@ -134,13 +134,3 @@ contract-intelligence-platform/
 3. Upload contract documents through the web interface
 4. Interact with contracts using the AI-powered chat interface
 5. Set up reminders and manage contract lifecycle
-
-## Contributing
-
-Please read the contributing guidelines and code of conduct before contributing
-to this project.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for
-details.

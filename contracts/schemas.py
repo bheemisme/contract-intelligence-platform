@@ -60,6 +60,7 @@ class Contact(BaseModel):
     email: Optional[EmailStr]
     phone: Optional[str]
     
+    
 
 
 class Party(BaseModel):
@@ -91,6 +92,8 @@ class Contract(BaseModel):
     
     contract_type: Optional[ContractType] = Field(..., description="The title of the contract. Allowed values are 'SUPPLIER_CONTRACT', 'NDA_CONTRACT', 'EMPLOYMENT_CONTRACT'.")
 
+    pdf_uri: Optional[str] = Field(..., description="GCS URI of the uploaded contract PDF.")
+    md_uri: Optional[str] = Field(..., description="GCS URI of the uploaded contract markdown.")
     
 
 class PaymentTerms(BaseModel):

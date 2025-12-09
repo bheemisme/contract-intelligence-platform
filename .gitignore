@@ -5,7 +5,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.log
+*.logs
 data/
+logs/
 
 # Ruff cache
 .ruff_cache/

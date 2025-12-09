@@ -2,6 +2,7 @@ import os
 import openai
 import fitz  # PyMuPDF
 import base64
+
 from dotenv import load_dotenv
 from openai import OpenAI
 from google import genai
@@ -82,7 +83,7 @@ def open_ai_extractor(pdf_path: str) -> str:
 
     return md_path
 
-def gemini_extractor(pdf_path: str) -> str:
+def gemini_extractor(pdf_path: str, dest_path: str):
     
     client = genai.Client()
     
@@ -113,7 +114,7 @@ def gemini_extractor(pdf_path: str) -> str:
             model="gemini-2.5-flash",
             contents=[contents],
         )
-        extracted_text = response.candidates[0].content.parts[0].text
+        extracted_text = response.candidates[0].content.parts[0].text # type: ignore
 
     except Exception as e:
         raise RuntimeError(f"An error occurred with the OpenAI API: {e}")
@@ -122,30 +123,27 @@ def gemini_extractor(pdf_path: str) -> str:
     if not extracted_text:
         raise ValueError("Failed to get a valid response from the OpenAI API.")
 
-    md_filename = os.path.splitext(os.path.basename(pdf_path))[0] + ".md"
-    md_path = os.path.join("data", "extracts", md_filename)
-
-    with open(md_path, "w", encoding="utf-8") as f:
+    with open(dest_path, "w", encoding="utf-8") as f:
         f.write(extracted_text)
 
-    return md_path
 
-
-def extract(doc_path: str):
+def extract(doc_path: str, dest_path: str):
     """
     Extracts the document into a markdown format and stores the markdown file.
     """
     if doc_path.lower().endswith(".pdf"):
-        return gemini_extractor(doc_path)
+        return gemini_extractor(doc_path, dest_path)
     else:
         raise ValueError("Unsupported file type. Only PDF files are supported.")
+
+
 
 
 if __name__ == "__main__":
     # Example:
     load_dotenv()
     try:
-        md_file = extract("data/nda/nda-1.pdf")
+        md_file = extract("data/nda/nda-1.pdf", "data/extracts/nda-1.md")
         print(f"Successfully created markdown file: {md_file}")
     except (FileNotFoundError, ValueError, RuntimeError) as e:
         print(f"An error occurred: {e}")
