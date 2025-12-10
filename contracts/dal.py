@@ -63,10 +63,11 @@ def fetch_contracts_by_type(db: Client, contract_type: ContractType) -> list[Con
     return [Contract(**doc.to_dict()) for doc in docs]
 
 
-def get_all_contracts(db: Client) -> list[str]:
+def get_all_contracts(db: Client) -> list[Contract]:
     contracts_ref = db.collection("contracts")
     docs = contracts_ref.stream()
-    return [doc.get("contract_id") for doc in docs]
+    
+    return [Contract(**(doc.to_dict())) for doc in docs]
 
 
 if __name__ == "__main__":

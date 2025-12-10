@@ -86,7 +86,7 @@ class Contract(BaseModel):
         Parent class for all contract schemas
     """
     
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     contract_id: uuid.UUID = Field(default_factory=uuid.uuid4, description="Unique identifier for the contract.")
     

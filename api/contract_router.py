@@ -1,7 +1,7 @@
 """FastAPI routes for the contract management application."""
 
 from typing import List
-from fastapi import UploadFile, File, HTTPException
+from fastapi import UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRouter
 from database import storage, vector, db
@@ -20,20 +20,24 @@ router = APIRouter(prefix="/contract")
 
 
 @router.post("/upload")
-async def upload_contract(
-    contract_type: schemas.ContractType, file: UploadFile = File(...)
-):
+async def upload_contract(contract_type: str = Form(...), file: UploadFile = File(...)):
     """
     Uploads a contract document to Google Cloud Storage.
 
     Args:
-        contract_type (ContractType): The type of contract being uploaded.
+        contract_type (str): The type of contract being uploaded as a string.
         file (UploadFile): The contract file to upload.
 
     Returns:
         dict: A dictionary containing the file name and its GCS URI.
     """
     try:
+        # Convert string to ContractType enum
+        try:
+            contract_type = schemas.ContractType(contract_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid contract type")
+
         # check the contract type
         if contract_type == schemas.ContractType.NDA_CONTRACT:
             contract_cls = schemas.NDAContract
@@ -133,10 +137,10 @@ async def get_contract(contract_id: str):
 
 
 @router.get("/get_all")
-async def get_all_contracts() -> List[str]:
-    logger.log(level=logging.INFO, msg="getting all contracts")
+async def get_all_contracts() -> List[schemas.Contract]:
     db_client = db.get_firestore_connection()
     contracts = await asyncio.to_thread(dal.get_all_contracts, db_client)
+    logger.log(level=logging.DEBUG, msg="fetched all contracts")
 
     return contracts
 
@@ -190,7 +194,7 @@ async def validate_contract(contract_id: str) -> schemas.ValidationReport:
         raise HTTPException(status_code=404, detail="Contract not found")
 
     logger.log(logging.DEBUG, "contract fetched from database")
-    
+
     md_uri = contract.md_uri
 
     temp_dir = tempfile.gettempdir()
@@ -202,11 +206,9 @@ async def validate_contract(contract_id: str) -> schemas.ValidationReport:
     with open(temp_md_path, "wb") as f:
         f.write(md_file)
 
-    
     validation_report = await asyncio.to_thread(
         validate.validate, contract_path=temp_md_path, contract=contract
     )
-    
+
     logger.log(logging.DEBUG, "validation report is completed")
     return validation_report
-    
