@@ -90,6 +90,7 @@ class Contract(BaseModel):
 
     contract_id: uuid.UUID = Field(default_factory=uuid.uuid4, description="Unique identifier for the contract.")
     
+    contract_name: Optional[str] = Field(..., description="The name of the contract")    
     contract_type: Optional[ContractType] = Field(..., description="The title of the contract. Allowed values are 'SUPPLIER_CONTRACT', 'NDA_CONTRACT', 'EMPLOYMENT_CONTRACT'.")
 
     pdf_uri: Optional[str] = Field(..., description="GCS URI of the uploaded contract PDF.")

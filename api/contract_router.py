@@ -20,11 +20,12 @@ router = APIRouter(prefix="/contract")
 
 
 @router.post("/upload")
-async def upload_contract(contract_type: str = Form(...), file: UploadFile = File(...)):
+async def upload_contract(contract_name: str = Form(...), contract_type: str = Form(...), file: UploadFile = File(...)):
     """
     Uploads a contract document to Google Cloud Storage.
 
     Args:
+        contract_name (str): The name of the contract
         contract_type (str): The type of contract being uploaded as a string.
         file (UploadFile): The contract file to upload.
 
@@ -88,11 +89,13 @@ async def upload_contract(contract_type: str = Form(...), file: UploadFile = Fil
         db_client = db.get_firestore_connection()
         contract_id = await asyncio.to_thread(dal.add_contract, db_client, contract)
 
+        contract.contract_name = contract_name
         # Clean up the temporary file
         os.remove(temp_pdf_path)
         os.remove(temp_md_path)
 
         return {
+            "contract_name": contract_name,
             "filename": unique_filename,
             "contract_id": contract_id,
             "message": "File uploaded successfully",
