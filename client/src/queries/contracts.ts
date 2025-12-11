@@ -29,6 +29,7 @@ export const useUploadContract = () => {
         throw new Error("form not completed")
       }
       const formData = new FormData()
+      formData.append("contract_name", contractForm.contract_name)
       formData.append("contract_type", contractForm.contract_type)
       formData.append("file", contractForm.file)
 
