@@ -3,7 +3,7 @@ import ContractComp from '../components/ContractComp';
 import ContractForm from '../components/ContractForm';
 import type { ContractSchema } from '../schemas';
 
-import { Button, Checkbox, Label, Modal, ModalBody, ModalHeader, TextInput } from "flowbite-react";
+import { Button, Modal, ModalBody, ModalHeader } from "flowbite-react";
 import { useState } from "react";
 
 const Contracts = () => {

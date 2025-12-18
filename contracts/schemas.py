@@ -88,6 +88,7 @@ class Contract(BaseModel):
     
     model_config = ConfigDict(extra="ignore")
 
+    user_id: str = Field(description="user id of the user associated to the contract")
     contract_id: uuid.UUID = Field(default_factory=uuid.uuid4, description="Unique identifier for the contract.")
     
     contract_name: Optional[str] = Field(..., description="The name of the contract")    

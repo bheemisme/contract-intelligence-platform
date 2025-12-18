@@ -12,3 +12,8 @@ export interface ContractSchema {
     pdf_uri: string
     md_uri: string
 }
+
+export interface UserSchema {
+    username: string,
+    email: string
+}

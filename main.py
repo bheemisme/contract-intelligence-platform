@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 from config import log_config
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from api import contract_router
+from api import contract_router, user_router
 
 import logging
 import uvicorn
@@ -13,17 +13,19 @@ load_dotenv()
 
 app = FastAPI()
 
-origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+
 app.include_router(contract_router.router)
+app.include_router(user_router.router)
 
 logger = logging.getLogger(__name__)
 

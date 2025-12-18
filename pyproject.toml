@@ -22,4 +22,5 @@ dependencies = [
     "pypdf>=6.2.0",
     "python-dotenv>=1.2.1",
     "ruff>=0.14.4",
+    "google-auth>=2.43.0",
 ]
