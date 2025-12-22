@@ -39,22 +39,21 @@ export const useGetUser = () => {
         queryFn: async () => {
             const api_origin = import.meta.env.VITE_API_ORIGIN
 
-            try {
-                const response = await fetch(`${api_origin}/user/get_user`, {
-                    method: "GET",
-                    credentials: "include"
-                })
+            const response = await fetch(`${api_origin}/user/get_user`, {
+                method: "GET",
+                credentials: "include"
+            })
 
-                if (!response.ok) {
-                    throw new Error("session is inactive")
-                }
-                const data: UserSchema = await response.json()
-                return data
-            } catch (error) {
-                console.error(error)
+            if (!response.ok) {
+                throw new Error("session is inactive")
             }
+            const data: UserSchema = await response.json()
+            return data
+
         },
-        retry: 5,
+
+
+        retry: 3,
         retryDelay: 1000,
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,

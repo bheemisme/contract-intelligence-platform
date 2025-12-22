@@ -1,17 +1,28 @@
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from config import log_config
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import contract_router, user_router
+from connectors import chromadb_connector, firestore_connector, gcs_connector
 
 import logging
 import uvicorn
 import os
 
-# import contracts.schemas as schemas
 load_dotenv()
 
-app = FastAPI()
+# import contracts.schemas as schemas
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.firestore = firestore_connector.get_firestore_connection()
+    app.state.bucket = gcs_connector.get_storage_bucket()
+    app.state.chromadb = chromadb_connector.get_chroma_client()
+    yield
+    # optional cleanup
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(

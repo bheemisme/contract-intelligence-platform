@@ -12,48 +12,47 @@ from contracts.schemas import (
 from google.cloud.firestore import Client
 
 
-
 # function to add contract to contracts collection
 def add_contract(db: Client, contract: Contract) -> str:
     """
     add contract to contracts collection
     """
     doc_ref = db.collection("contracts").document(str(contract.contract_id))
-    doc_ref.set(contract.model_dump(mode="json"))
+
+    if doc_ref.get().exists:
+        raise ValueError(f"Contract with ID {contract.contract_id} already exists.")
+  
+    doc_ref.set(contract.model_dump(mode="json"))    
     return doc_ref.id
 
 
-# function to add batch of contracts to contracts collection
-def add_contracts(db: Client, contracts: list[Contract]):
-    """
-    add batch of contracts to contracts collection
-    """
-    
-    batch = db.batch()
-    for contract in contracts:
-        doc_ref = db.collection("contracts").document(str(contract.contract_id))
-        batch.set(doc_ref, contract.model_dump())
-    batch.commit()
+def get_contract_only(db: Client, contract_id: str) -> Optional[Contract]:
+    """Fetch a contract by its ID."""
 
-
-def get_contract(db: Client, contract_id: str) -> Optional[Contract]:
     doc_ref = db.collection("contracts").document(contract_id)
-    doc =  doc_ref.get() # db request
+    doc = doc_ref.get()  # db request
     if not doc.exists:
         return None
+    return Contract(**doc.to_dict()) # type: ignore
 
-    contract_type = doc.get("contract_type")
+def get_contract(db: Client, contract_id: str) -> Optional[Contract]:
+    """Fetch a contract by its ID and return the appropriate Contract subclass."""
 
-    if contract_type is None:
-        raise ValueError("Contract type is required")
-    elif contract_type == ContractType.NDA_CONTRACT:
+    doc_ref = db.collection("contracts").document(contract_id)
+    doc = doc_ref.get() # db request
+    if not doc.exists:
+        return None
+    
+    contract = Contract(**doc.to_dict())  # type: ignore
+    
+    if contract.contract_type == ContractType.NDA_CONTRACT:
         return NDAContract(**doc.to_dict())  # type: ignore
-    elif contract_type == ContractType.SUPPLIER_CONTRACT:
+    elif contract.contract_type == ContractType.SUPPLIER_CONTRACT:
         return SupplierContract(**doc.to_dict())  # type: ignore
-    elif contract_type == ContractType.EMPLOYMENT_CONTRACT:
+    elif contract.contract_type == ContractType.EMPLOYMENT_CONTRACT:
         return EmploymentContract(**doc.to_dict())  # type: ignore
-    else:
-        raise ValueError(f"Unknown contract type: {contract_type}")
+    
+    return contract
 
 
 def fetch_contracts_by_type(db: Client, contract_type: ContractType) -> list[Contract]:
@@ -72,11 +71,9 @@ def get_all_contracts(db: Client, user_id) -> list[Contract]:
 
 if __name__ == "__main__":
 
-    from database import db
+    from connectors import firestore_connector
     from dotenv import load_dotenv
 
     load_dotenv()
-    contract = get_contract(
-        db.get_firestore_connection(), "123e4567-e89b-12d3-a456-426614174000"
-    )
+    contract = get_contract(firestore_connector.get_firestore_connection(),"123e4567-e89b-12d3-a456-426614174000")
     print(contract)

@@ -7,6 +7,7 @@ import Account from './pages/Account';
 import Navigation from './components/Navigation';
 import { useGetUser } from './queries/user';
 import Callback from './pages/Callback';
+import ContractDetail from './pages/ContractDetail';
 
 import { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -28,6 +29,16 @@ export const sessionStoragePersister = createAsyncStoragePersister({
 })
 
 
+const LoadingIndicator: React.FC<{ message?: string }> = ({ message = 'Verifying access...' }) => (
+  <div className="flex flex-col items-center justify-center h-screen bg-green-50">
+    <svg className="w-20 h-20 animate-spin text-green-700" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+    <p className="mt-6 text-lg font-semibold text-green-800">{message}</p>
+  </div>
+);
+
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { error, data: user } = useGetUser()
@@ -38,9 +49,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     }
   }, [user, error]);
   if (state === "loading") {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-    </div>;
+    return <LoadingIndicator message="Verifying access to contracts..." />;
   }
 
   return user ? <>{children}</> : <Navigate to="/" replace />;
@@ -97,6 +106,17 @@ function App() {
                 <Navigation />
                 <div className='md:pl-64 pt-16 md:pt-0'>
                   <Chat />
+                </div>
+              </div>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/contract/:contractId" element={
+            <ProtectedRoute>
+              <div className=''>
+                <Navigation />
+                <div className='md:pl-64 pt-16 md:pt-0'>
+                  <ContractDetail />
                 </div>
               </div>
             </ProtectedRoute>

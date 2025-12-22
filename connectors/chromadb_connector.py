@@ -1,11 +1,13 @@
-"""Methods for interacting with vector database"""
+"""Methods for interacting with chromadb vector database"""
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
 import os
 import chromadb
 import uuid
+import logging
 
+logger = logging.getLogger(__name__)
 
 def get_chroma_client():
     client = chromadb.CloudClient(
@@ -14,7 +16,6 @@ def get_chroma_client():
       database=os.environ['CHROMA_DATABASE']
     )
     return client
-
 
 # function for chunking a given document using semantic chunking
 def chunk_document(
@@ -48,7 +49,8 @@ def chunk_document(
 
 
 def write_to_chroma(
-    chunks: list[str], collection_name: str, persist_directory: str = "./data/chroma_db"
+    client: chromadb.ClientAPI, # type: ignore
+    chunks: list[str], collection_name: str
 ):
     """
     Writes the given chunks to a ChromaDB collection.
@@ -56,19 +58,16 @@ def write_to_chroma(
     Args:
         chunks (list[str]): The list of text chunks to store.
         collection_name (str): The name of the ChromaDB collection.
-        persist_directory (str): The directory to persist the ChromaDB data.
     """
-    client = get_chroma_client()
     collection = client.get_or_create_collection(name=collection_name)
 
     ids = [str(uuid.uuid4()) for _ in chunks]
 
     collection.add(documents=chunks, ids=ids)
-    print(f"Successfully added {len(chunks)} chunks to collection '{collection_name}'.")
+    logger.debug(f"Successfully added {len(chunks)} chunks to collection '{collection_name}'.")
 
 
-def query_chroma(collection_name: str):
-    client = get_chroma_client()
+def query_chroma(client: chromadb.ClientAPI, collection_name: str): # type: ignore
     collection = client.get_collection(name=collection_name)
     results = collection.query(
         query_texts=[
@@ -86,5 +85,6 @@ if __name__ == "__main__":
     # write_to_chroma(chunks, "contracts")  # Replace with your desired collection name
     from pprint import pprint
     # print(f"Number of chunks: {len(chunks)}")uv    
-    results = query_chroma('contracts')
+    chroma_client = get_chroma_client()
+    results = query_chroma(chroma_client,'contracts') 
     pprint(results)

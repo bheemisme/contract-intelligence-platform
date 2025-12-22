@@ -1,7 +1,6 @@
 """Methods to interact with the storage layer"""
 
 from google.cloud import storage
-from google.api_core import exceptions
 from typing import List
 from dotenv import load_dotenv
 import os
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 # upload file to the storage bucket
-def get_storage_client() -> storage.Bucket:
+def get_storage_bucket() -> storage.Bucket:
     """
     Returns google cloud storage bucket client
     
@@ -25,7 +24,7 @@ def get_storage_client() -> storage.Bucket:
     return bucket
 
 
-def upload_file(file_path: str, destination_blob_name: str):
+def upload_file(bucket: storage.Bucket, file_path: str, destination_blob_name: str):
     """
     Uploads a file to the 'contracts_pdfs' folder in the Google Cloud Storage bucket.
 
@@ -33,7 +32,6 @@ def upload_file(file_path: str, destination_blob_name: str):
         file_path (str): The path to the file to upload.
     """
     
-    bucket = get_storage_client()
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_filename(file_path)
     logger.log(
@@ -43,7 +41,7 @@ def upload_file(file_path: str, destination_blob_name: str):
     
 
 # implement a function to download a file from the storage bucket
-def download_file(source_blob_name: str) -> bytes:
+def download_file(bucket: storage.Bucket, source_blob_name: str) -> bytes:
     """Downloads a file from the Google Cloud Storage bucket and stores it in destination_file_name.
 
     Args:
@@ -58,15 +56,13 @@ def download_file(source_blob_name: str) -> bytes:
 
     """
 
-    bucket = get_storage_client()
     blob = bucket.blob(source_blob_name)
     blob_bytes = blob.download_as_bytes()
     return blob_bytes
 
 
-def list_files() -> List[str]:
+def list_files(bucket: storage.Bucket) -> List[str]:
     """Lists all files in the Google Cloud Storage bucket."""
-    bucket = get_storage_client()
     blobs = bucket.list_blobs()
     blob_names = list(map(lambda blob: blob.name, blobs))
 

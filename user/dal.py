@@ -3,6 +3,8 @@
 from typing import Optional
 from google.cloud.firestore import Client
 from user.schemas import User
+from google.cloud import firestore
+
 
 
 def add_user(db: Client, user: User) -> str:
@@ -15,11 +17,25 @@ def add_user(db: Client, user: User) -> str:
 
     Returns:
         str: The document ID of the created user
-    """
-    doc_ref = db.collection("users").document(str(user.email))
-    doc_ref.set(user.model_dump(mode="json"))
-    return doc_ref.id
 
+    Throws:
+        ValueError: If a user with the same email already exists
+    """
+    @firestore.transactional
+    def transaction_add_user(transaction, doc_ref, user):
+        snapshot = doc_ref.get(transaction=transaction)
+        if snapshot.exists:
+            return False
+        transaction.set(doc_ref, user.model_dump(mode="json"))
+        return True
+    
+    doc_ref = db.collection("users").document(str(user.email))
+    txn = db.transaction()
+    is_success = transaction_add_user(txn, doc_ref, user)
+
+    if not is_success:
+        raise ValueError(f"User with email {user.email} already exists.")
+    return doc_ref.id
 
 def get_user(db: Client, email: str) -> Optional[User]:
     """
@@ -34,11 +50,9 @@ def get_user(db: Client, email: str) -> Optional[User]:
     """
     doc_ref = db.collection("users").document(email)
     doc = doc_ref.get()
-
     if not doc.exists:
         return None
-
-    return User(**doc.to_dict()) # type: ignore
+    return User(**doc.to_dict())  # type: ignore
 
 
 def delete_user(db: Client, user_id: str) -> bool:
@@ -54,22 +68,20 @@ def delete_user(db: Client, user_id: str) -> bool:
     """
     doc_ref = db.collection("users").document(user_id)
     doc = doc_ref.get()
-
     if not doc.exists:
         return False
-
     doc_ref.delete()
     return True
 
 
 if __name__ == "__main__":
-    from database import db
+    from connectors import firestore_connector
     from dotenv import load_dotenv
 
     load_dotenv()
 
     # Example usage
-    firestore_client = db.get_firestore_connection()
+    firestore_client = firestore_connector.get_firestore_connection()
 
     # Create a test user
     test_user = User(username="testuser", email="test@example.com")

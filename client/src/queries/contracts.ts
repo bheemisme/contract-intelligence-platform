@@ -1,23 +1,32 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import type { ContractFormSchema } from '../schemas';
-
-const API_BASE_URL = import.meta.env.VITE_ENV === 'development'
-  ? 'http://127.0.0.1:8000'
-  : 'https://contract-intelligence-platform.onrender.com';
+import type { ContractBase, ContractFormSchema } from '../schemas';
 
 
 export const useGetContracts = () => {
   return useQuery({
     queryKey: ['contracts'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/contract/get_all`)
+      const api_origin = import.meta.env.VITE_API_ORIGIN
+
+      const response = await fetch(`${api_origin}/contract/get_all`, {
+        method: 'GET',
+        credentials: 'include'
+      })
 
       if (!response.ok) {
         throw new Error("Failed to fetch contracts");
       }
 
-      return response.json()
-    }
+      const data: ContractBase[] = await response.json();
+
+      return data
+    },
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
 };
 
@@ -25,7 +34,10 @@ export const useUploadContract = () => {
   return useMutation({
     mutationFn: async (contractForm: ContractFormSchema) => {
 
-      if (!contractForm.contract_type || !contractForm.file) {
+    const api_origin = import.meta.env.VITE_API_ORIGIN
+
+
+      if (!contractForm.contract_name || !contractForm.contract_type || !contractForm.file) {
         throw new Error("form not completed")
       }
       const formData = new FormData()
@@ -33,18 +45,41 @@ export const useUploadContract = () => {
       formData.append("contract_type", contractForm.contract_type)
       formData.append("file", contractForm.file)
 
-      const response = await fetch(`${API_BASE_URL}/contract/upload?contract_type=NDA_CONTRACT`, {
+      const response = await fetch(`${api_origin}/contract/upload`, {
         method: 'POST',
         body: formData,
-
+        credentials: "include",
       })
 
       if (!response.ok) {
         throw new Error('Failed to upload contract');
       }
 
-      return response.json();
+      const data: ContractBase = await response.json()
+
+      return data
     }
 
   },)
+}
+
+export const useGetContract = (contractId: string | undefined) => {
+  return useQuery({
+    queryKey: ['contract', contractId],
+    queryFn: async () => {
+      if (!contractId) {
+        throw new Error('Missing contract ID');
+      }
+      const api_origin = import.meta.env.VITE_API_ORIGIN
+      const response = await fetch(`${api_origin}/contract/get/${contractId}`, {
+        method: 'GET',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to fetch contract details');
+      }
+      return response.json();
+    },
+    enabled: !!contractId,
+  })
 }
