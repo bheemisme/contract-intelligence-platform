@@ -6,7 +6,7 @@ from pprint import pprint
 
 import json
 
-def fill_schema(contract_path: str, contract: schemas.Contract.__class__) -> schemas.Contract:
+def fill_schema(contract_path: str, contract_cls: schemas.Contract.__class__) -> schemas.Contract:
     """
     Fills the schema with the extracted data.
 
@@ -30,13 +30,16 @@ def fill_schema(contract_path: str, contract: schemas.Contract.__class__) -> sch
     For fields that expect a list, output an empty list if no values are found.
     Output the schema in json and nothing else. All key values in json must be the key names in the schema.
     """
+    
+    # ignore contract_id, md_uri, pdf_uri, contract_name, contract_type fields
+    
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents={"parts": [{"text": prompt}], "role": "user"},
         config=types.GenerateContentConfig(
             system_instruction="You are a helpful assistant",
-            response_schema=contract,
-            response_mime_type="application/json"
+            response_schema=contract_cls,
+            response_mime_type="application/json"             
         ),
     )
     5
@@ -50,9 +53,10 @@ def fill_schema(contract_path: str, contract: schemas.Contract.__class__) -> sch
 
     # The response text should be a JSON string matching ValidationReport
     # We can parse it directly into the Pydantic model
-    filled_contract = contract.model_validate_json(response.text)
     
-    return filled_contract
+    filled_contract = contract_cls.model_validate_json(response.text)
+    
+    return filled_contract # type: ignore
 
 
 if __name__ == "__main__":

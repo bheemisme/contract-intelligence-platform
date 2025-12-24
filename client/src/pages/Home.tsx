@@ -1,24 +1,8 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import React from 'react';
 import GoogleButton from '../components/GoogleButton';
-import { useGetUser } from "../queries/user"
-import { useAuth } from 'react-oidc-context';
+
 const Home: React.FC = () => {
 
-  const auth = useAuth()
-  // const { isLoading, error, data } = useGetUser()
- 
-  useEffect(() => {
-    console.log("home useeffect:  ", auth.isAuthenticated)
-    console.log(auth.user)
-  },[auth.isAuthenticated])
-  // useEffect(() => {
-  //     console.log("home useeffect:  ", isLoading)
-  //     if(data){
-  //       console.log(data)
-  //       navigate("/account")
-  //     }
-  // }, [data])
   return (
     <div className="min-h-screen bg-linear-to-br from-green-50 to-green-100">
       {/* Navigation Bar - Public */}

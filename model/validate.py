@@ -64,7 +64,9 @@ def validate(contract_path: str, contract: Contract) -> schemas.ValidationReport
 
     # The response text should be a JSON string matching ValidationReport
     # We can parse it directly into the Pydantic model
+    
     validation_report = schemas.ValidationReport.model_validate_json(response.text)
+    validation_report.contract_id = contract.contract_id
     
     return validation_report
 

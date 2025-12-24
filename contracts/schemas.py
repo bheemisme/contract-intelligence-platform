@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, List
+from typing import Optional, List, Union
 from pydantic import BaseModel, Field, ConfigDict, EmailStr, HttpUrl
 from datetime import date
 from enum import Enum
@@ -236,12 +236,14 @@ class ValidationReport(BaseModel):
     """Comprehensive validation report for a contract."""
     model_config = ConfigDict(extra="forbid")
     
+    contract_id: uuid.UUID = Field(..., description="The ID of the contract being validated.")
     date_verification: ValidationCheck = Field(..., description="Verification of dates correctness.")
     missing_clauses_compliance: ValidationCheck = Field(..., description="Check for missing clauses and compliance with specific laws.")
     spelling_mistakes: ValidationCheck = Field(..., description="Verification for spelling mistakes of important headings and subheadings.")
     language_ambiguities: ValidationCheck = Field(..., description="Verification for language ambiguities in the contract which are misleading.")
 
 
+AnyContract = Union[EmploymentContract, NDAContract, SupplierContract]
 
 if __name__ == '__main__':
     

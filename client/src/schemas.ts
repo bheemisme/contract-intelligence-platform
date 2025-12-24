@@ -111,3 +111,18 @@ export interface EmploymentContract extends ContractBase {
     job_title: string
     ctc: CTC
 }
+
+export interface ValidationCheck {
+    score: number
+    errors: string[]
+}
+
+export interface ValidationReport {
+    contract_id: string
+    date_verification: ValidationCheck
+    missing_clauses_compliance: ValidationCheck
+    spelling_mistakes: ValidationCheck
+    language_ambiguities: ValidationCheck
+}
+
+export type Contract = NDAContract | EmploymentContract | SupplierContract

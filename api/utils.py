@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from sessions import dal as session_dal
 from google.cloud import firestore, storage
 from sessions.schemas import Session
-
+from pydantic import ValidationError
 import chromadb
 import asyncio
 import logging
@@ -66,7 +66,7 @@ async def validate_session(db_client: firestore.Client = Depends(get_firestore),
     """
     
     if not session_id:
-        raise HTTPException(status_code=401, detail="No session found")
+        raise HTTPException(status_code=401, detail="unauthorized")
 
     # Check if there's an active session cookie
     session = await asyncio.to_thread(session_dal.get_session, db_client, session_id)
@@ -74,10 +74,10 @@ async def validate_session(db_client: firestore.Client = Depends(get_firestore),
     logger.debug(f"Validating session: {session_id}")
 
     if not session:
-        raise HTTPException(status_code=401, detail="No session found")
+        raise HTTPException(status_code=401, detail="unauthorized")
 
     if session.expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=401, detail="inactive session")
+        raise HTTPException(status_code=401, detail="unauthorized")
 
     return session
 
@@ -89,6 +89,10 @@ def handle_exceptions(func):
             return await func(*args, **kwargs)
         except HTTPException as http_exc:
             raise http_exc
+        except ValidationError as pve:
+            raise HTTPException(status_code=400, detail=str(pve))
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail=str(ve))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 

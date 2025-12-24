@@ -23,4 +23,5 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "ruff>=0.14.4",
     "google-auth>=2.43.0",
+    "aiofiles>=25.1.0",
 ]

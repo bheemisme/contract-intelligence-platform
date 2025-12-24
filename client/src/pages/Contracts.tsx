@@ -4,13 +4,23 @@ import ContractForm from '../components/ContractForm';
 import type { ContractBase } from '../schemas';
 
 import { Button } from "flowbite-react";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
+import { useNavigate } from 'react-router';
+import { QueryClient } from '@tanstack/react-query';
 
 const Contracts = () => {
 
+  const queryClient = new QueryClient()
   const { isLoading, error, data: contracts } = useGetContracts()
 
   const [openModal, setOpenModal] = useState(false);
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (error?.message === 'unauthorized') {
+      queryClient.clear()
+      navigate('/')
+    }
+  }, [error])
 
   return (
     <div className="relative p-4 bg-green-50 min-h-screen">
@@ -18,16 +28,16 @@ const Contracts = () => {
 
       {openModal && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40">
-            <div className="contracts-modal relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl border border-green-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-green-800">Upload Contract</h3>
-                <button
-                  onClick={() => setOpenModal(false)}
-                  className="text-green-600 hover:text-green-800 cursor-pointer"
-                >
-                  &#10005;
-                </button>
-              </div>
+          <div className="contracts-modal relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl border border-green-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-green-800">Upload Contract</h3>
+              <button
+                onClick={() => setOpenModal(false)}
+                className="text-green-600 hover:text-green-800 cursor-pointer"
+              >
+                &#10005;
+              </button>
+            </div>
             <ContractForm closeForm={() => setOpenModal(false)} />
           </div>
         </div>
