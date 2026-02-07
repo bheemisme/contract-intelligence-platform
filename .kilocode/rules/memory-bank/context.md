@@ -20,6 +20,7 @@ The current focus is on building out the core application logic, including the d
 *   **Centralized Logging**: Implemented centralized logging configuration in `config/log_config.py` with separate configurations for development and production environments.
 *   **Data Access Layer**: Added `contracts/dal.py` for Firestore operations including add_contract, get_contract, and get_all_contracts functions.
 *   **Memory Bank Update**: Updated `architecture.md` and `tech.md` to reflect the new architecture and technologies.
+*   **Session-Based Auth**: Added `user_router.py`, `sessions/`, and `api/utils.py` session validation logic so signin/get_user routes manage sessions via secure cookies and Firestore-backed session documents.
 
 ## Next Steps
 

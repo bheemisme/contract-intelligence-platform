@@ -1,17 +1,17 @@
 meta {
-  name: get_agent
+  name: delete_agent
   type: http
-  seq: 2
+  seq: 5
 }
 
-get {
+delete {
   url: {{API_ORIGIN}}/agent/:agent_id
   body: none
   auth: inherit
 }
 
 params:path {
-  agent_id: 6c72334b-73af-4747-92df-2f815dcec9fe
+  agent_id: fec04c86-d9c9-4a89-88f0-3b2df4b4b99f
 }
 
 settings {

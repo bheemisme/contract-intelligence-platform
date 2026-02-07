@@ -98,7 +98,7 @@ async def signin(
         user_id = email
 
     logger.debug(f"Creating session for user_id: {user_id}")
-    session_expiry = datetime.now(timezone.utc) + timedelta(hours=2)  # 2 hour session
+    session_expiry = datetime.now(timezone.utc) + timedelta(hours=5)  # 5 hour session
     new_session = session_schemas.Session(user_id=user_id, expires_at=session_expiry)
 
     logger.debug("Saving session to database")

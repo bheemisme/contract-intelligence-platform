@@ -17,7 +17,8 @@ The core workflow is as follows:
 
 *   `main.py`: The main entry point of the application.
 *   `agent/`: Contains the AI agent code built with LangGraph.
-*   `api/routes.py`: Defines the API routes for the application.
+*   `api/contract_router.py`: Defines API routes for contracts.
+*   `api/user_router.py`: Handles user signin, session creation, and user lookup via secure cookies.
 *   `client/`: Contains the frontend code.
 *   `contracts/generate_contracts.py`: A script to generate test contract data.
 *   `contracts/prompts.py`: Contains prompts used for contract generation.
@@ -28,6 +29,8 @@ The core workflow is as follows:
 *   `database/db.py`: Handles the connection to and interaction with the Firestore database.
 *   `database/vector.py`: Handles splitting of contract documents into chunks and storing/querying them in ChromaDB.
 *   `database/storage.py`: Handles file uploads to Google Cloud Storage.
+*   `sessions/schemas.py`: Stores session metadata (session id, user id, expiry) for cookie-based authentication.
+*   `sessions/dal.py`: Reads, writes, and deletes session documents in Firestore.
 
 ## Key Technical Decisions
 
@@ -52,3 +55,5 @@ The core workflow is as follows:
 *   **FastAPI for API**: FastAPI is used to build the REST API, providing high performance and automatic documentation.
 
 *   **Google Cloud Storage**: Used for storing the raw contract PDF files.
+
+*   **Session-Based Auth**: Sessions are validated via `api/utils.py` and the `require_session` decorator so API routes can rely on secure cookies and Firestore-backed session documents.

@@ -18,6 +18,7 @@ import logging
 import asyncio
 import chromadb
 import aiofiles
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/contract")
@@ -238,7 +239,7 @@ async def get_all_contracts(
 
 @router.get("/get_pdf/{contract_id}")
 @handle_exceptions
-async def get_contract_files(
+async def get_contract_pdf(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     bucket: Annotated[storage.Bucket, Depends(get_bucket)],
     contract_id: str,
@@ -342,4 +343,34 @@ async def validate_contract(
     await asyncio.to_thread(contracts_dal.save_validation_report, db_client, validation_report)
 
     logger.log(logging.DEBUG, "validation report is saved to database")
+    return validation_report
+
+@router.get("/validate/get/{contract_id}")
+@handle_exceptions
+async def get_validation_report(
+    db_client: Annotated[firestore.Client, Depends(get_firestore)],
+    session: Annotated[session_schemas.Session, Depends(validate_session)],
+    contract_id: Annotated[str, Path(description="The ID of the contract to validate")],
+) -> contracts_schemas.ValidationReport:
+
+    logger.debug(f"user session validated for getting validation report of contract_id: {contract_id}")
+    contract = await asyncio.to_thread(
+        contracts_dal.get_contract, db_client, contract_id
+    )
+
+    if contract is None:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    logger.log(logging.DEBUG, "contract fetched from database")
+
+    if contract.user_id != session.user_id:
+        raise HTTPException(status_code=403, detail="unauthorized request")
+
+    validation_report = await asyncio.to_thread(
+        contracts_dal.get_validation_report, db_client, contract_id
+    )
+
+    if validation_report is None:
+        raise HTTPException(status_code=404, detail="Validation report not found")
+
+    logger.log(logging.DEBUG, "validation report fetched from database")
     return validation_report
