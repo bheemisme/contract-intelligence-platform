@@ -1,0 +1,23 @@
+meta {
+  name: call_agent
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{API_ORIGIN}}/agent/call
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "agent_id": "6c72334b-73af-4747-92df-2f815dcec9fe",
+    "message": "What is the capital of france?" 
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

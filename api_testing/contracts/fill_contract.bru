@@ -1,0 +1,22 @@
+meta {
+  name: fill_contract
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_ORIGIN}}/contract/fill
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "contract_id": "f8ae97b0-8680-4728-97f9-9ef010dc4814"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

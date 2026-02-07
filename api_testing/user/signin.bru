@@ -1,0 +1,22 @@
+meta {
+  name: signin
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_ORIGIN}}/user/signin
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "{{$oauth2.credentials.id_token}}"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

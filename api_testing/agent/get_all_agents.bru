@@ -1,0 +1,15 @@
+meta {
+  name: get_all_agents
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{API_ORIGIN}}/agent/get_all
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

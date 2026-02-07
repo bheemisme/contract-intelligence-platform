@@ -1,0 +1,16 @@
+meta {
+  name: logout_user
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_ORIGIN}}/user/logout
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

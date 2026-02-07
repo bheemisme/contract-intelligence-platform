@@ -1,0 +1,20 @@
+meta {
+  name: get_contract
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_ORIGIN}}/contract/get/:contract_id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  contract_id: f8ae97b0-8680-4728-97f9-9ef010dc4814
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

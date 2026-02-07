@@ -1,0 +1,16 @@
+meta {
+  name: get_all_contracts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_ORIGIN}}/contract/get_all
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,22 @@
+auth {
+  mode: oauth2
+}
+
+auth:oauth2 {
+  grant_type: authorization_code
+  callback_url: http://localhost:5173/callback
+  authorization_url: {{GOOGLE_AUTH_URI}}
+  access_token_url: {{GOOGLE_AUTH_TOKEN_URI}}
+  refresh_token_url: 
+  client_id: {{GOOGLE_AUTH_CLIENT_ID}}
+  client_secret: {{GOOGLE_AUTH_CLIENT_SECRET}}
+  scope: openid email profile
+  state: 3979832749
+  pkce: true
+  credentials_placement: body
+  credentials_id: credentials
+  token_placement: header
+  token_header_prefix: Bearer
+  auto_fetch_token: true
+  auto_refresh_token: false
+}

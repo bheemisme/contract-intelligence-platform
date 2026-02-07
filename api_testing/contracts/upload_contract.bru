@@ -1,0 +1,22 @@
+meta {
+  name: upload_contract
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_ORIGIN}}/contract/upload
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  contract_name: supplier contract one
+  contract_type: SUPPLIER_CONTRACT
+  file: @file(C:\Users\LENOVO\Projects\contract-intelligence-platform\data\supplier_contracts\sc-1.pdf)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
