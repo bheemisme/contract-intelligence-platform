@@ -3,6 +3,8 @@ from agent.dal import get_agent_document
 from google.cloud.firestore import Client
 from langchain.messages import SystemMessage, HumanMessage, AnyMessage
 from typing import List
+from datetime import datetime, timezone
+from time import sleep
 
 
 def call_agent(db: Client, agent_id: str, message: str) -> List[AnyMessage]:
@@ -28,16 +30,24 @@ def call_agent(db: Client, agent_id: str, message: str) -> List[AnyMessage]:
     )
     history: List[AnyMessage] = agent_doc.messages
     messages: List[AnyMessage] = []
-    
+
     if len(history) == 0:
-        messages.append(SystemMessage(content="You are a helpful assistant", id=0))
-    
-    messages.append(HumanMessage(content=message, id=len(history)+len(messages)))
-    
+        messages.append(
+            SystemMessage(
+                content="You are a helpful assistant",
+                additional_kwargs={"created_at": datetime.now(timezone.utc).timestamp()},
+            )
+        )
+        sleep(1)  # sleep for 1 second to ensure different timestamps for messages
+
+    messages.append(
+        HumanMessage(
+            content=message,
+            additional_kwargs={"created_at": datetime.now(timezone.utc).timestamp()},
+        )
+    )
+
     response = agent.invoke(history + messages)
+    response.additional_kwargs["created_at"] = datetime.now(timezone.utc).timestamp()
     messages.append(response)
     return messages
-
-
-
-

@@ -14,7 +14,6 @@ from langchain.messages import (
 from google.cloud.firestore import (
     CollectionReference,
     DocumentSnapshot,
-    DocumentReference,
 )
 
 
@@ -23,47 +22,17 @@ def contruct_message(messages: Iterator[DocumentSnapshot]):
     for message in messages:
 
         if message.get("type") == "human":
-            yield {
-                "content": message.get("content"),
-                "type": message.get("type"),
-                "id": message.get("id"),
-                "idx": message.get("idx"),
-            }
+            yield HumanMessage(content=message.get("content"), id=message.get("id"), additional_kwargs={"created_at": message.get("additional_kwargs").get("created_at")})
+            
         elif message.get("type") == "ai":
-            yield {
-                "content": message.get("content"),
-                "type": message.get("type"),
-                "id": message.get("id"),
-                "tool_calls": message.get("tool_calls"),
-                "idx": message.get("idx"),
-            }
+            yield AIMessage(content=message.get("content"), id=message.get("id"), tool_calls=message.get("tool_calls"), additional_kwargs={"created_at": message.get("additional_kwargs").get("created_at")})
         elif message.get("type") == "system":
-            yield {
-                "content": message.get("content"),
-                "type": message.get("type"),
-                "id": message.get("id"),
-                "idx": message.get("idx"),
-            }
+            yield SystemMessage(content=message.get("content"), id=message.get("id"), additional_kwargs={"created_at": message.get("additional_kwargs").get("created_at")})
+            
         elif message.get("type") == "tool":
-            yield {
-                "content": message.get("content"),
-                "type": message.get("type"),
-                "id": message.get("id"),
-                "idx": message.get("idx"),
-                "tool_call_id": message.get("tool_call_id"),
-            }
+            yield ToolMessage(content=message.get("content"), id=message.get("id"), tool_call_id=message.get("tool_call_id"), additional_kwargs={"created_at": message.get("additional_kwargs").get("created_at")})
+           
 
-def contruct_message_obj_from_dict(messages: List[Dict]):
-    for message in messages:
-        
-        if message["type"] == "human":
-            yield HumanMessage(content=message["content"], id=message["id"])
-        elif message["type"] == "ai":
-            yield AIMessage(content=message["content"], id=message["id"], tool_calls=message.get("tool_calls"))
-        elif message["type"] == "system":
-            yield SystemMessage(content=message["content"], id=message["id"])
-        elif message["type"] == "tool":
-            yield ToolMessage(content=message["content"], id=message["id"], tool_call_id=message.get("tool_call_id"))
 
 def create_agent_document(db: Client, agent: Agent) -> str:
     """
@@ -105,10 +74,8 @@ def get_agent_document(db: Client, agent_id: str) -> Agent:
 
     messages = list(contruct_message(msg_stream))
     
-    # sort messages by idx
-    messages.sort(key=lambda x: int(x["idx"]))
-    
-    messages = list(contruct_message_obj_from_dict(messages))
+    # sort messages by created_at timestamp
+    messages.sort(key=lambda x: x.additional_kwargs["created_at"])  # type: ignore
 
     agent = Agent(**doc.to_dict())  # type: ignore
     agent.messages = messages  # type: ignore
@@ -133,17 +100,11 @@ def add_messages(db: Client, agent_id: str, messages: list[AnyMessage]):
     doc_ref = db.collection("agents").document(agent_id)
     msg_ref: CollectionReference = doc_ref.collection("messages")
 
-    # compute total number of messages
-    total_messages = len(list(msg_ref.stream()))
-
     batch = db.batch()
 
-    for idx, msg in zip(
-        range(total_messages, total_messages + len(messages)), messages
-    ):
+    for msg in messages:
         doc_ref = msg_ref.document()
         msg_dict = msg.model_dump(mode="json")
-        msg_dict["idx"] = idx
         batch.set(doc_ref, msg_dict)
 
     batch.commit()
