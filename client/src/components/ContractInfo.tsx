@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { Contract, ContractBase } from "../schemas";
+import type { Contract, ContractBase } from "../contract-schemas";
 import { useFillContract } from "../queries/contracts";
 import { useState } from "react";
 import { renderValue } from "../components/utils";

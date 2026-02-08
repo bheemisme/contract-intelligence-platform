@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { logoutUser, useGetUser } from '../queries/user';
+import { logoutUser, useGetUser } from '@/queries/user';
 import { useQueryClient } from '@tanstack/react-query';
 
 const Account: React.FC = () => {

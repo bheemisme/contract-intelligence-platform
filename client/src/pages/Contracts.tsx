@@ -1,10 +1,10 @@
-import { useGetContracts } from '../queries/contracts';
-import ContractComp from '../components/ContractComp';
-import ContractForm from '../components/ContractForm';
-import type { ContractBase } from '../schemas';
+import { useGetContracts } from '@/queries/contracts';
+import ContractComp from '@/components/ContractComp';
+import ContractForm from '@/components/ContractForm';
+import type { ContractBase } from '@/contract-schemas';
 
 import { Button } from "flowbite-react";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from 'react-router';
 import { QueryClient } from '@tanstack/react-query';
 

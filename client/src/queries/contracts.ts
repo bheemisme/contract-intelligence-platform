@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import type { ContractBase, ContractFormSchema, Contract, ValidationReport } from '../schemas';
+import type { ContractBase, ContractFormSchema, Contract, ValidationReport } from '../contract-schemas';
 
 
 export const useGetContracts = () => {

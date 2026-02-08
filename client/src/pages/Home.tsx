@@ -1,5 +1,5 @@
 import React from 'react';
-import GoogleButton from '../components/GoogleButton';
+import GoogleButton from '@/components/GoogleButton';
 
 const Home: React.FC = () => {
 

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router"
 import { useSignInUser } from "../queries/user"
 import { useEffect } from "react"
 import { useAuth } from "react-oidc-context"
-import LoadingView from "../components/LoadingView"
+import LoadingView from "@/components/LoadingView"
 
 
 const Callback = () => {

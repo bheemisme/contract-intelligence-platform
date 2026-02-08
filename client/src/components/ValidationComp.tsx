@@ -1,6 +1,6 @@
-import { use, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useValidateContract, useGetValidationReport } from "../queries/contracts"
-import type { Contract, ContractBase, ValidationReport } from "../schemas"
+import type { Contract, ContractBase, ValidationReport } from "../contract-schemas"
 import { renderValue } from "./utils"
 
 type ValidatingStatus = "none" | "validating" | "validated" | "error"

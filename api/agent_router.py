@@ -14,14 +14,10 @@ from agent import schemas as agent_schemas
 from agent import dal as agent_dal
 from agent import utils as agent_utils
 from langchain.messages import AnyMessage
+
 import logging
-import os
-import uuid
-import tempfile
 import logging
 import asyncio
-import chromadb
-import aiofiles
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +30,7 @@ router = APIRouter(prefix="/agent")
 async def create_agent(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     session: Annotated[session_schemas.Session, Depends(validate_session)],
-    name: str = Form(...),
+    name: str = Body(...),
 ) -> str:
     """
     Create a new agent for the given session.
@@ -42,12 +38,11 @@ async def create_agent(
     Args:
         db_client: Firestore client.
         session: Session object.
-
+        name: Name of the agent to be created.
     Returns:
         str
     """
     # Create a new collection for the agent
-
     agent_doc = agent_schemas.Agent(user_id=session.user_id, name=name)
     agent_id = await asyncio.to_thread(
         agent_dal.create_agent_document, db_client, agent_doc
@@ -55,6 +50,29 @@ async def create_agent(
 
     logger.debug(f"Created agent with ID: {agent_id}")
     return agent_id
+
+@router.get("/get_all")
+@handle_exceptions
+async def get_all_agents(
+    db_client: Annotated[firestore.Client, Depends(get_firestore)],
+    session: Annotated[session_schemas.Session, Depends(validate_session)],
+) -> list[agent_schemas.Agent]:
+    """
+    Get all agents for the given session.
+
+    Args:
+        db_client: Firestore client.
+        session: Session object.
+
+    Returns:
+        List of Agent objects.
+    """
+
+    agents = await asyncio.to_thread(
+        agent_dal.get_all_agent_documents, db_client, session.user_id
+    )
+
+    return agents
 
 
 @router.get("/{agent_id}")
@@ -122,30 +140,6 @@ async def delete_agent(
     await asyncio.to_thread(agent_dal.delete_agent_document, db_client, agent_id)
 
 
-@router.get("/get_all")
-@handle_exceptions
-async def get_all_agents(
-    db_client: Annotated[firestore.Client, Depends(get_firestore)],
-    session: Annotated[session_schemas.Session, Depends(validate_session)],
-) -> list[agent_schemas.Agent]:
-    """
-    Get all agents for the given session.
-
-    Args:
-        db_client: Firestore client.
-        session: Session object.
-
-    Returns:
-        List of Agent objects.
-    """
-
-    agents = await asyncio.to_thread(
-        agent_dal.get_all_agent_documents, db_client, session.user_id
-    )
-
-    return agents
-
-
 @router.put("/")
 @handle_exceptions
 async def call_agent(
@@ -153,7 +147,7 @@ async def call_agent(
     session: Annotated[session_schemas.Session, Depends(validate_session)],
     agent_id: str = Body(...),
     message: str = Body(...),
-) -> list[AnyMessage]:
+) -> dict:
     """
     Call an agent for the given session.
 
@@ -180,15 +174,21 @@ async def call_agent(
         raise ValueError("User not authorized to call this agent")
 
     # Call the agent
-    response = await asyncio.to_thread(
+    messages = await asyncio.to_thread(
         agent_utils.call_agent, db_client, agent_id, message
     )
     logger.debug(f"agent generated response")
 
 
     await asyncio.to_thread(
-        agent_dal.add_messages, db_client, agent_id=agent_id, messages=response
+        agent_dal.add_messages, db_client, agent_id=agent_id, messages=messages
     )
 
     logger.debug(f"added agent messages")
-    return response
+    message_respon = {
+        "content": messages[-1].content,
+        "type": messages[-1].type,
+        "created_at": messages[-1].additional_kwargs['created_at'],
+    }
+
+    return message_respon

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import type { UserSchema } from "../schemas"
+import type { UserSchema } from "@/contract-schemas"
 import type { User } from "oidc-client-ts"
 export const useSignInUser = () => {
     return useMutation({

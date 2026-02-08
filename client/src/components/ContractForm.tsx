@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useUploadContract } from '../queries/contracts';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ContractFormSchema } from '../schemas';
+import type { ContractFormSchema } from '../contract-schemas';
 
 interface ContractFormProps {
   closeForm: () => void;

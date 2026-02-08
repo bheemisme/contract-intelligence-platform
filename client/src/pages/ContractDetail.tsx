@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { useGetContractWithoutValidation, useGetContract } from '../queries/contracts';
-import type { Contract, ContractBase } from "../schemas";
-import ContractInfo from '../components/ContractInfo';
-import LoadingView from '../components/LoadingView';
-import ValidationComp from '../components/ValidationComp';
+import { useGetContractWithoutValidation, useGetContract } from '@/queries/contracts';
+import type { Contract, ContractBase } from "@/contract-schemas";
+import ContractInfo from '@/components/ContractInfo';
+import LoadingView from '@/components/LoadingView';
+import ValidationComp from '@/components/ValidationComp';
 import { QueryClient } from '@tanstack/react-query';
 
 

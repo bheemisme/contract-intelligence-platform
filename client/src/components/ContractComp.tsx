@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router';
-import type { ContractBase } from "../schemas";
+import type { ContractBase } from "../contract-schemas";
 
 interface ContractCompProps {
     contract: ContractBase;

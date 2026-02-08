@@ -44,8 +44,12 @@ def create_agent_document(db: Client, agent: Agent) -> str:
     Returns:
         The ID of the created agent document.
     """
-    doc_ref = db.collection("agents").document(str(agent.agent_id))
-    doc_ref.set(agent.model_dump(mode="json"))
+    doc_ref = db.collection("agents").document(str(agent.agent_id))  # initialize state as empty dict
+    
+    # remove messages from agent dict before saving to Firestore, as messages are stored in a subcollection
+    agent_dict = agent.model_dump(mode="json")
+    agent_dict.pop("messages", None)
+    doc_ref.set(agent_dict)
     return doc_ref.id
 
 
@@ -72,13 +76,13 @@ def get_agent_document(db: Client, agent_id: str) -> Agent:
 
     msg_stream = msg_ref.stream()
 
-    messages = list(contruct_message(msg_stream))
+    messages: list[AnyMessage] = list(contruct_message(msg_stream))
     
     # sort messages by created_at timestamp
     messages.sort(key=lambda x: x.additional_kwargs["created_at"])  # type: ignore
 
     agent = Agent(**doc.to_dict())  # type: ignore
-    agent.messages = messages  # type: ignore
+    agent.messages = messages  
     return agent
 
 
