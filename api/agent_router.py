@@ -1,5 +1,6 @@
 from typing import Annotated
-from fastapi import APIRouter, Body, Depends, Form
+from fastapi import APIRouter, Body, Depends
+from api.schemas import CallAgentRequest, CreateAgentRequest, RenameAgentRequest
 from api.utils import (
     handle_exceptions,
     validate_session,
@@ -8,14 +9,11 @@ from api.utils import (
     get_firestore,
 )
 from google.cloud import firestore, storage
-from connectors import chromadb_connector
 from sessions import schemas as session_schemas
 from agent import schemas as agent_schemas
 from agent import dal as agent_dal
 from agent import utils as agent_utils
-from langchain.messages import AnyMessage
 
-import logging
 import logging
 import asyncio
 
@@ -30,7 +28,7 @@ router = APIRouter(prefix="/agent")
 async def create_agent(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     session: Annotated[session_schemas.Session, Depends(validate_session)],
-    name: str = Body(...),
+    req: CreateAgentRequest,
 ) -> str:
     """
     Create a new agent for the given session.
@@ -43,13 +41,14 @@ async def create_agent(
         str
     """
     # Create a new collection for the agent
-    agent_doc = agent_schemas.Agent(user_id=session.user_id, name=name)
+    agent_doc = agent_schemas.Agent(user_id=session.user_id, name=req.name)
     agent_id = await asyncio.to_thread(
         agent_dal.create_agent_document, db_client, agent_doc
     )
 
     logger.debug(f"Created agent with ID: {agent_id}")
     return agent_id
+
 
 @router.get("/get_all")
 @handle_exceptions
@@ -140,13 +139,48 @@ async def delete_agent(
     await asyncio.to_thread(agent_dal.delete_agent_document, db_client, agent_id)
 
 
+@router.put("/add_contract")
+@handle_exceptions
+async def add_contract_to_agent(
+    db_client: Annotated[firestore.Client, Depends(get_firestore)],
+    session: Annotated[session_schemas.Session, Depends(validate_session)],
+    agent_id: str = Body(...),
+    contract_id: str = Body(...),
+) -> None:
+    """
+    Add a contract to an agent for the given session.
+
+    Args:
+        db_client: Firestore client.
+        session: Session object.
+        agent_id: Agent ID.
+        contract_id: Contract ID.
+    Returns:
+        None
+    """
+    agent_doc = await asyncio.to_thread(
+        agent_dal.get_agent_document, db_client, agent_id
+    )
+
+    if agent_doc is None:
+        raise ValueError("Agent not found")
+
+    if agent_doc.user_id != session.user_id:
+        raise ValueError("User not authorized to modify this agent")
+
+    await asyncio.to_thread(
+        agent_dal.add_contracts_to_agent, db_client, agent_id, contract_id
+    )
+    
+
+
 @router.put("/")
 @handle_exceptions
 async def call_agent(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
+    bucket: Annotated[storage.Bucket, Depends(get_bucket)],
     session: Annotated[session_schemas.Session, Depends(validate_session)],
-    agent_id: str = Body(...),
-    message: str = Body(...),
+    req: CallAgentRequest,
 ) -> dict:
     """
     Call an agent for the given session.
@@ -156,14 +190,17 @@ async def call_agent(
         session: Session object.
         agent_id: Agent ID.
         message: Message to send to the agent.
+        selected_contracts: List of selected contract IDs.
 
     Returns:
         Agent object.
     """
 
     response = await asyncio.to_thread(
-        agent_dal.get_agent_document, db_client, agent_id
+        agent_dal.get_agent_document, db_client, req.agent_id
     )
+    logger.debug(f"fetched agent document with ID: {req.agent_id} for user: {session.user_id}")
+    logger.debug(f"agent document details: {response.selected_contract}")
 
     logger.debug(f"fetched agent document")
 
@@ -175,20 +212,54 @@ async def call_agent(
 
     # Call the agent
     messages = await asyncio.to_thread(
-        agent_utils.call_agent, db_client, agent_id, message
+        agent_utils.call_agent, db_client, bucket, req.agent_id, req.message
     )
     logger.debug(f"agent generated response")
 
-
     await asyncio.to_thread(
-        agent_dal.add_messages, db_client, agent_id=agent_id, messages=messages
+        agent_dal.add_messages, db_client, agent_id=req.agent_id, messages=messages
     )
 
     logger.debug(f"added agent messages")
     message_respon = {
         "content": messages[-1].content,
         "type": messages[-1].type,
-        "created_at": messages[-1].additional_kwargs['created_at'],
+        "created_at": messages[-1].additional_kwargs["created_at"],
     }
 
     return message_respon
+
+
+@router.put("/rename")
+@handle_exceptions
+async def rename_agent(
+    db_client: Annotated[firestore.Client, Depends(get_firestore)],
+    session: Annotated[session_schemas.Session, Depends(validate_session)],
+    req: RenameAgentRequest,
+) -> None:
+    """
+    Rename an agent for the given session.
+
+    Args:
+        db_client: Firestore client.
+        session: Session object.
+        agent_id: Agent ID.
+        new_name: New name for the agent.
+    Returns:
+        None
+    """
+    agent_doc = await asyncio.to_thread(
+        agent_dal.get_agent_document, db_client, req.agent_id
+    )
+
+    if agent_doc is None:
+        raise ValueError("Agent not found")
+
+    if agent_doc.user_id != session.user_id:
+        raise ValueError("User not authorized to modify this agent")
+
+    agent_doc.name = req.new_name
+
+    await asyncio.to_thread(
+        agent_dal.rename_agent, db_client, req.agent_id, req.new_name
+    )

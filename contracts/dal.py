@@ -20,7 +20,7 @@ def add_contract(db: Client, contract: Contract) -> str:
     """
     doc_ref = db.collection("contracts").document(str(contract.contract_id))
 
-    if doc_ref.get().exists:
+    if doc_ref.get().exists: # type: ignore
         raise ValueError(f"Contract with ID {contract.contract_id} already exists.")
   
     doc_ref.set(contract.model_dump(mode="json"))    
@@ -32,7 +32,7 @@ def get_contract_unvalidated(db: Client, contract_id: str) -> Optional[Contract]
 
     doc_ref = db.collection("contracts").document(contract_id)
     doc = doc_ref.get()  # db request
-    if not doc.exists:
+    if not doc.exists: # type: ignore
         return None
     return Contract(**doc.to_dict()) # type: ignore
 
@@ -41,7 +41,7 @@ def get_contract(db: Client, contract_id: str) -> Optional[Union[EmploymentContr
 
     doc_ref = db.collection("contracts").document(contract_id)
     doc = doc_ref.get() # db request
-    if not doc.exists:
+    if not doc.exists: # type: ignore
         return None
     
     contract = Contract(**doc.to_dict()) # type: ignore
@@ -106,9 +106,11 @@ def save_validation_report(db: Client, validation_report: ValidationReport) -> V
 def get_validation_report(db: Client, contract_id: str) -> ValidationReport | None:
     doc_ref = db.collection("validation_reports").document(contract_id)
     doc = doc_ref.get()
-    if not doc.exists:
+    
+    if not doc.exists: # type: ignore
         return None
     return ValidationReport(**doc.to_dict())  # type: ignore
+
 if __name__ == "__main__":
 
     from connectors import firestore_connector

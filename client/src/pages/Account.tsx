@@ -27,18 +27,19 @@ const Account: React.FC = () => {
 
     setIsLoggingOut(true);
     const isLoggedOut = await logoutUser()
-    if (isLoggedOut) {
-      queryClient.removeQueries({
+    
+    queryClient.removeQueries({
         "queryKey": ["user"]
-      })
-      navigate('/')
-    }
+    })
+    navigate('/')
+    
     setIsLoggingOut(false);
   };
 
   const handleDeleteAccount = async () => {
 
     // api call tok delete user data on the backend
+
   };
 
   return (

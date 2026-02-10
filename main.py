@@ -12,7 +12,6 @@ import os
 
 load_dotenv()
 
-# import contracts.schemas as schemas
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

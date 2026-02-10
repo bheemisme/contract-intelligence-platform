@@ -6,12 +6,22 @@ meta {
 
 post {
   url: {{API_ORIGIN}}/agent
-  body: multipartForm
+  body: json
   auth: inherit
 }
 
+body:json {
+  {"name": "new chat 16"}
+}
+
+body:text {
+  {
+    "name": "new chat 16"
+  }
+}
+
 body:multipart-form {
-  name: new chat 2
+  name: new chat 4
 }
 
 settings {

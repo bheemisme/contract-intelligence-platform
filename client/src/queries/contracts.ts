@@ -22,9 +22,9 @@ export const useGetContracts = () => {
     retry: 3,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: true,
   });
 };
 
@@ -84,7 +84,7 @@ export const useGetContractWithoutValidation = (contractId: string) => {
   })
 }
 
-export const useGetContract = (contractId: string) => {
+export const useGetContract = (contractId: string | null) => {
   return useQuery({
     queryKey: ['contract', contractId],
     queryFn: async () => {

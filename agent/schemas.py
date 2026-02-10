@@ -16,3 +16,4 @@ class Agent(BaseModel):
     messages: List[AnyMessage] = Field(default=[],description="List of messages exchanged with the agent.")
     state: Dict = Field(default={} ,description="The current state of the agent.")
     
+    selected_contract: Optional[str] = Field(default=None, description="selected contract ID for the agent's context.")

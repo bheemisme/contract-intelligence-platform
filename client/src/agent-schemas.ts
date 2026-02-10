@@ -14,5 +14,15 @@ export interface Agent {
     model_name: string;
     messages?: Message[];
     state?: Record<string, unknown>;
+    selected_contract?: string;
 }
 
+export interface CallAgentParams { 
+    agentId: string;
+    message: string;
+}
+
+export interface AddContractToAgentParams {
+    agent_id: string;
+    contract_id: string;
+}

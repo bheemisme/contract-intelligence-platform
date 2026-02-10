@@ -89,7 +89,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/chat" element={
+          {/* <Route path="/chat" element={
             <ProtectedRoute>
               <div className=''>
                 <Navigation />
@@ -98,7 +98,7 @@ function App() {
                 </div>
               </div>
             </ProtectedRoute>
-          } />
+          } /> */}
 
           <Route path="/chat/:chatId" element={
             <ProtectedRoute>

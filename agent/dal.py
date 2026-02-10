@@ -112,3 +112,23 @@ def add_messages(db: Client, agent_id: str, messages: list[AnyMessage]):
         batch.set(doc_ref, msg_dict)
 
     batch.commit()
+
+def add_contracts_to_agent(db: Client, agent_id: str, contract_id: str):
+    """Updates the selected contract of an agent document in Firestore."""
+    doc_ref = db.collection("agents").document(agent_id)
+    doc = doc_ref.get()
+    if not doc.exists:  # type: ignore
+        raise ValueError(f"Agent document with ID {agent_id} does not exist.")
+    
+    doc_ref.set({"selected_contract": contract_id}, merge=True)
+
+def rename_agent(db: Client, agent_id: str, new_name: str):
+    """Renames an agent document in Firestore."""
+    doc_ref = db.collection("agents").document(agent_id)
+    doc = doc_ref.get()
+    if not doc.exists:  # type: ignore
+        raise ValueError(f"Agent document with ID {agent_id} does not exist.")
+    
+    doc_ref.set({"name": new_name}, merge=True)
+    
+    

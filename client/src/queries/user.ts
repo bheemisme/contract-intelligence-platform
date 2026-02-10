@@ -79,7 +79,7 @@ export const logoutUser = async () => {
         return true
     } catch (error) {
         console.error(error)
-
+        
     }
 
     return false

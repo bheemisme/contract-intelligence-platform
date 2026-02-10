@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { useGetAllAgents } from "@/queries/agents"
+import { useDeleteAgent, useGetAllAgents } from "@/queries/agents"
+import AgentForm from "./AgentForm";
+import { useQueryClient } from '@tanstack/react-query';
 
 const buildChatSubItems = () => {
   const agents = useGetAllAgents()
@@ -8,22 +10,122 @@ const buildChatSubItems = () => {
     path: `/chat/${val.agent_id}`,
     label: val.name,
     icon: '📄',
+    agent_id: val.agent_id
   })) || []
 };
 
-const navItems = (chats: Array<{ path: string; label: string; icon: string }>) => [
+const navItems = (chats: Array<{ path: string; label: string; icon: string, agent_id: string }>) => [
   { path: '/contracts', label: 'Contracts', icon: '📄' },
   { label: 'Chat', icon: '💬', subItems: chats },
   { path: '/account', label: 'Account', icon: '👤' },
 ];
 
-const DesktopNavItemsList: React.FC<{
+interface DesktopNavItemsListProps {
   items: ReturnType<typeof navItems>;
   location: ReturnType<typeof useLocation>;
   isChatOpen: boolean;
   toggleChat: () => void;
+  isAgentFormOpen: boolean;
+  setIsAgentFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = ({ items, location, isChatOpen, toggleChat, isAgentFormOpen, setIsAgentFormOpen }) => {
+  const deleteAgent = useDeleteAgent()
+  const queryClient = useQueryClient()
+
+  return (
+    <nav className="flex-1 px-4 py-4 space-y-2">
+      {items.map((item, idx) => (
+        <div key={idx}>
+          {item.subItems ? (
+            <div>
+              <div
+                className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md transition-colors ${location.pathname.startsWith('/chat')
+                  ? 'bg-green-700 text-white'
+                  : 'text-green-100 hover:bg-green-700 hover:text-white'
+                  }`}
+              >
+                <button onClick={toggleChat} className="flex items-center flex-1">
+                  <span className="mr-3">{item.icon}</span>
+                  {item.label}
+                </button>
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => {
+                      setIsAgentFormOpen(!isAgentFormOpen);
+                    }}
+                    className="p-1 rounded hover:bg-green-600 transition-colors"
+                    title="New Chat"
+                  >
+                    ➕
+                  </button>
+                  <button
+                    onClick={toggleChat}
+                    className="p-1 rounded hover:bg-green-600 transition-colors"
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
+              {isChatOpen && (
+                <div className="ml-6 mt-1 space-y-1">
+                  {item.subItems.map((subItem, idx) => (
+                    <div className="flex flex-row items-center justify-between" key={idx}>
+                      <Link
+                        to={subItem.path}
+                        className={`flex items-center px-4 py-2 text-xs font-medium rounded-md transition-colors ${location.pathname === subItem.path
+                          ? 'bg-green-600 text-white'
+                          : 'text-green-200 hover:bg-green-600 hover:text-white'
+                          }`}
+                      >
+                        <span className="mr-2">{subItem.icon}</span>
+                        {subItem.label}
+                      </Link>
+                      <button className='cursor-pointer' onClick={() => {
+                        deleteAgent.mutate(subItem.agent_id, {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: ["agents"] })
+                          },
+                          onError: (error) => {
+                            console.error("Error deleting agent:", error);
+                          }
+                        })
+                      }}><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 30 30">
+                          <path d="M 13 3 A 1.0001 1.0001 0 0 0 11.986328 4 L 6 4 A 1.0001 1.0001 0 1 0 6 6 L 24 6 A 1.0001 1.0001 0 1 0 24 4 L 18.013672 4 A 1.0001 1.0001 0 0 0 17 3 L 13 3 z M 6 8 L 6 24 C 6 25.105 6.895 26 8 26 L 22 26 C 23.105 26 24 25.105 24 24 L 24 8 L 6 8 z"></path>
+                        </svg></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to={item.path!}
+              className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${location.pathname === item.path
+                ? 'bg-green-700 text-white'
+                : 'text-green-100 hover:bg-green-700 hover:text-white'
+                }`}
+            >
+              <span className="mr-3">{item.icon}</span>
+              {item.label}
+            </Link>
+          )}
+        </div>)
+      )}
+    </nav>
+  );
+};
+
+const MobileNavItemList: React.FC<{
+  items: ReturnType<typeof navItems>;
+  location: ReturnType<typeof useLocation>;
+  isChatOpen: boolean;
+  toggleChat: () => void;
+  closeMobileMenu: () => void;
   navigate: ReturnType<typeof useNavigate>;
-}> = ({ items, location, isChatOpen, toggleChat, navigate }) => {
+}> = ({ items, location, isChatOpen, toggleChat, closeMobileMenu, navigate }) => {
+  const queryClient = useQueryClient();
+  const deleteAgent = useDeleteAgent();
   return (
     <nav className="flex-1 px-4 py-4 space-y-2">
       {items.map((item, idx) => (
@@ -59,17 +161,28 @@ const DesktopNavItemsList: React.FC<{
               {isChatOpen && (
                 <div className="ml-6 mt-1 space-y-1">
                   {item.subItems.map((subItem, idx) => (
-                    <Link
-                      key={idx}
-                      to={subItem.path}
-                      className={`flex items-center px-4 py-2 text-xs font-medium rounded-md transition-colors ${location.pathname === subItem.path
-                        ? 'bg-green-600 text-white'
-                        : 'text-green-200 hover:bg-green-600 hover:text-white'
-                        }`}
-                    >
-                      <span className="mr-2">{subItem.icon}</span>
-                      {subItem.label}
-                    </Link>
+                    <div className="flex flex-row items-center justify-between" key={idx}>
+                      <Link
+                        to={subItem.path}
+                        onClick={closeMobileMenu}
+                        className={`flex items-center px-4 py-2 text-xs font-medium rounded-md transition-colors ${location.pathname === subItem.path
+                          ? 'bg-green-600 text-white'
+                          : 'text-green-200 hover:bg-green-600 hover:text-white'
+                          }`}
+                      >
+                        <span className="mr-2">{subItem.icon}</span>
+                        {subItem.label}
+                      </Link>
+                      <button className='cursor-pointer' onClick={() => {
+                        deleteAgent.mutate(subItem.agent_id, {
+                          onSuccess: () => {
+                            queryClient.refetchQueries({queryKey: ['agents']})
+                          }
+                        })
+                      }}><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 30 30">
+                        <path d="M 13 3 A 1.0001 1.0001 0 0 0 11.986328 4 L 6 4 A 1.0001 1.0001 0 1 0 6 6 L 24 6 A 1.0001 1.0001 0 1 0 24 4 L 18.013672 4 A 1.0001 1.0001 0 0 0 17 3 L 13 3 z M 6 8 L 6 24 C 6 25.105 6.895 26 8 26 L 22 26 C 23.105 26 24 25.105 24 24 L 24 8 L 6 8 z"></path>
+                      </svg></button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -77,6 +190,9 @@ const DesktopNavItemsList: React.FC<{
           ) : (
             <Link
               to={item.path!}
+              onClick={() => {
+                closeMobileMenu();
+              }}
               className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${location.pathname === item.path
                 ? 'bg-green-700 text-white'
                 : 'text-green-100 hover:bg-green-700 hover:text-white'
@@ -86,89 +202,11 @@ const DesktopNavItemsList: React.FC<{
               {item.label}
             </Link>
           )}
-        </div>)
-      )}
+        </div>
+      ))}
     </nav>
-  );
+  )
 };
-
-const MobileNavItemList: React.FC<{
-  items: ReturnType<typeof navItems>;
-  location: ReturnType<typeof useLocation>;
-  isChatOpen: boolean;
-  toggleChat: () => void;
-  closeMobileMenu: () => void;
-  navigate: ReturnType<typeof useNavigate>;
-}> = ({ items, location, isChatOpen, toggleChat, closeMobileMenu, navigate }) => (
-  <nav className="flex-1 px-4 py-4 space-y-2">
-    {items.map((item, idx) => (
-      <div key={idx}>
-        {item.subItems ? (
-          <div>
-            <div
-              className={`flex items-center w-full px-4 py-2 text-sm font-medium rounded-md transition-colors ${location.pathname.startsWith('/chat')
-                ? 'bg-green-700 text-white'
-                : 'text-green-100 hover:bg-green-700 hover:text-white'
-                }`}
-            >
-              <button onClick={toggleChat} className="flex items-center flex-1">
-                <span className="mr-3">{item.icon}</span>
-                {item.label}
-              </button>
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() => navigate('/chat')}
-                  className="p-1 rounded hover:bg-green-600 transition-colors"
-                  title="New Chat"
-                >
-                  ➕
-                </button>
-                <button
-                  onClick={toggleChat}
-                  className="p-1 rounded hover:bg-green-600 transition-colors"
-                >
-                  ▼
-                </button>
-              </div>
-            </div>
-            {isChatOpen && (
-              <div className="ml-6 mt-1 space-y-1">
-                {item.subItems.map((subItem, idx) => (
-                  <Link
-                    key={idx}
-                    to={subItem.path}
-                    onClick={closeMobileMenu}
-                    className={`flex items-center px-4 py-2 text-xs font-medium rounded-md transition-colors ${location.pathname === subItem.path
-                      ? 'bg-green-600 text-white'
-                      : 'text-green-200 hover:bg-green-600 hover:text-white'
-                      }`}
-                  >
-                    <span className="mr-2">{subItem.icon}</span>
-                    {subItem.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Link
-            to={item.path!}
-            onClick={() => {
-              closeMobileMenu();
-            }}
-            className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${location.pathname === item.path
-              ? 'bg-green-700 text-white'
-              : 'text-green-100 hover:bg-green-700 hover:text-white'
-              }`}
-          >
-            <span className="mr-3">{item.icon}</span>
-            {item.label}
-          </Link>
-        )}
-      </div>
-    ))}
-  </nav>
-);
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -177,9 +215,13 @@ const Navigation: React.FC = () => {
   const chats = buildChatSubItems();
   const items = navItems(chats);
 
+  const [isAgentFormOpen, setIsAgentFormOpen] = useState(false);
   const toggleChat = () => setIsChatSubmenuOpen(open => !open);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const navigate = useNavigate()
+
+
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -187,12 +229,15 @@ const Navigation: React.FC = () => {
         <div className="flex items-center justify-center h-16 bg-green-900">
           <h1 className="text-xl font-bold">CIP</h1>
         </div>
+        {isAgentFormOpen && <AgentForm setIsAgentFormOpen={setIsAgentFormOpen} />}
         <DesktopNavItemsList
           items={items}
           location={location}
           isChatOpen={isChatSubmenuOpen}
           toggleChat={toggleChat}
-          navigate={navigate}
+          isAgentFormOpen={isAgentFormOpen}
+          setIsAgentFormOpen={setIsAgentFormOpen}
+
         />
       </div>
 

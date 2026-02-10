@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Agent, Message } from "@/agent-schemas";
+import type { Agent, Message, CallAgentParams, AddContractToAgentParams } from "@/agent-schemas";
 
 export const useGetAgent = (agent_id: string) => {
     return useQuery({
@@ -18,9 +18,12 @@ export const useGetAgent = (agent_id: string) => {
             const data: Agent = await response.json();
             return data;
         },
-        enabled: !!agent_id,
-        retry: false,
-        refetchOnWindowFocus: false,
+        retry: 3,
+        retryDelay: 1000,
+        refetchOnWindowFocus: true,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
     });
 };
 
@@ -45,9 +48,9 @@ export const useGetAllAgents = () => {
         retry: 3,
         retryDelay: 1000,
         staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-        refetchOnMount: false,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        refetchOnMount: true,
     });
 };
 
@@ -63,13 +66,14 @@ export const useCreateAgent = () => {
             }
 
             const api_origin = import.meta.env.VITE_API_ORIGIN;
-            const formData = new FormData();
-            formData.append("name", trimmedName);
 
-            const response = await fetch(`${api_origin}/agent/`, {
+            const response = await fetch(`${api_origin}/agent`, {
                 method: "POST",
                 credentials: "include",
-                body: formData,
+                body: JSON.stringify({ "name": trimmedName }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
             });
 
             if (!response.ok) {
@@ -107,16 +111,16 @@ export const useDeleteAgent = () => {
     });
 };
 
-export const useCallAgent = (agentId: string) => {
+export const useCallAgent = () => {
     return useMutation({
-        mutationKey: ["agent", agentId],
-        mutationFn: async (message: string) => {
+        mutationKey: ["agent", "call_agent"],
+        mutationFn: async (params: CallAgentParams) => {
             const api_origin = import.meta.env.VITE_API_ORIGIN;
         
             const response = await fetch(`${api_origin}/agent`, {
                 method: "PUT",
                 credentials: "include",
-                body: JSON.stringify({ agent_id: agentId, message }),
+                body: JSON.stringify({ agent_id: params.agentId, message: params.message }),
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -128,6 +132,52 @@ export const useCallAgent = (agentId: string) => {
 
             const message_response: Message = await response.json();
             return message_response;
+        }
+    })
+}
+
+
+export const useAddContractToAgent = (agentId: string) => {
+    return useMutation({
+        mutationKey: ["agent", agentId, "add_contract"],
+        mutationFn: async ({ contract_id }: AddContractToAgentParams) => {
+            const api_origin = import.meta.env.VITE_API_ORIGIN;
+            const response = await fetch(`${api_origin}/agent/add_contract`, {
+                method: "PUT",
+                credentials: "include",
+                body: JSON.stringify({ agent_id: agentId, contract_id }),
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+            
+            if (!response.ok) {
+                throw new Error("Failed to add contract to agent");
+            }
+        },
+       
+    })
+}
+
+export const useRenameAgent = (agentId: string) => {
+    return useMutation({
+        mutationKey: ["agent", agentId],
+        mutationFn: async ({ new_name }: { new_name: string }) => {
+            const api_origin = import.meta.env.VITE_API_ORIGIN;
+            const response = await fetch(`${api_origin}/agent/rename`, {
+                method: "PUT",
+                credentials: "include",
+                body: JSON.stringify({ agent_id: agentId, new_name }),
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to rename agent");
+            }
+           
+            
         }
     })
 }

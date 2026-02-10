@@ -5,18 +5,17 @@ from fastapi import Body, Depends, Path, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRouter
 from api.utils import validate_session, handle_exceptions, get_bucket, get_firestore
-from connectors import gcs_connector, chromadb_connector
+from connectors import gcs_connector
 from contracts import schemas as contracts_schemas, dal as contracts_dal
 from model import extract, fill, validate
 from sessions import schemas as session_schemas
 from google.cloud import firestore, storage
-from pprint import pprint
+
 import os
 import uuid
 import tempfile
 import logging
 import asyncio
-import chromadb
 import aiofiles
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,6 @@ router = APIRouter(prefix="/contract")
 async def upload_contract(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     bucket: Annotated[storage.Bucket, Depends(get_bucket)],
-    chroma_client: Annotated[chromadb.ClientAPI, Depends(chromadb_connector.get_chroma_client)], # type: ignore
     session: Annotated[session_schemas.Session, Depends(validate_session)],
     contract_name: str = Form(...),
     contract_type: str = Form(...),
@@ -80,11 +78,6 @@ async def upload_contract(
     await asyncio.to_thread(gcs_connector.upload_file, bucket, temp_pdf_path, pdf_file_uri)
     await asyncio.to_thread(gcs_connector.upload_file, bucket, temp_md_path, md_file_uri)
     logger.debug("contract uploaded successfully")
-
-    # chunk the document and store it in chroma
-    chunks = chromadb_connector.chunk_document(temp_md_path)
-    await asyncio.to_thread(chromadb_connector.write_to_chroma, chroma_client, chunks, "contracts")
-    logger.debug("contract chunks stored in vector database successfully")
 
     # Save contract to Firestore
     await asyncio.to_thread(contracts_dal.add_contract, db_client, contract)
