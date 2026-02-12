@@ -52,7 +52,6 @@ async def signin(
     Raises:
         HTTPException: If authentication fails.
     """
-
     logger.debug(f"Starting signin process")
     logger.debug(f"Session ID from cookie: {session_id}")
     # Check if there's an active session cookie

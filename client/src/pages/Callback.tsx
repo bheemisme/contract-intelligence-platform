@@ -14,7 +14,7 @@ const Callback = () => {
     useEffect(() => {
         if (auth.isAuthenticated && auth.user) {
             signInUser.mutate(auth.user, {
-                "onSuccess": async (data) => {
+                "onSuccess": async () => {
                     console.log("user authenticated and signed in:")
                     await auth.removeUser()
                     navigate("/account")

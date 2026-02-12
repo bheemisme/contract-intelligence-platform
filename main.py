@@ -12,6 +12,8 @@ import os
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,48 +23,59 @@ async def lifespan(app: FastAPI):
     yield
     # optional cleanup
 
+
 app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://cip-client-dot-contract-intelligence-platform.el.r.appspot.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+@app.get("/")
+def home():
+    return {"message": "Hello from contract-intelligence-platform!"}
 
 app.include_router(contract_router.router)
 app.include_router(user_router.router)
 app.include_router(agent_router.router)
 
-logger = logging.getLogger(__name__)
-
 
 def main():
 
-    if os.environ["ENV"] == "dev":
-        LOG_CONFIG = log_config.DEV_LOGGING_CONFIG
-    else:
-        LOG_CONFIG = log_config.PROD_LOGGING_CONFIG
+    reload = False
+    port = int(os.environ.get("PORT", 8000))
+    
+
+    if os.environ.get("ENV") == "dev":
+        reload = False
 
     print("Hello from contract-intelligence-platform!")
 
     uvicorn.run(
         "main:app",
-        reload=True,
+        reload=reload,
         reload_dirs=[
+            ".",
             "api",
             "database",
             "contracts",
             "agent",
             "config",
             "model",
-            "main.py",
+            "user",
+            "sessions",
+            "connectors",
         ],
-        log_config=LOG_CONFIG,
+        log_config=log_config.LOGGING_CONFIG,
+        port=port,
     )
 
 

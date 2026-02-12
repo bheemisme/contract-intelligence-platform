@@ -26,7 +26,7 @@ const Account: React.FC = () => {
   const handleLogout = async () => {
 
     setIsLoggingOut(true);
-    const isLoggedOut = await logoutUser()
+    await logoutUser()
     
     queryClient.removeQueries({
         "queryKey": ["user"]

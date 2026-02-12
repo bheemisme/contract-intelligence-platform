@@ -5,6 +5,10 @@ kinds. The platform automates contract information extraction, performs legal
 validation, sets reminders for important dates and deadlines, and provides an
 interactive interface for querying contract details.
 
+## Deployment
+
+[https://cip-client-dot-contract-intelligence-platform.el.r.appspot.com/](https://cip-client-dot-contract-intelligence-platform.el.r.appspot.com/)
+
 ## System Architecture
 
 The Contract Intelligence Platform is a comprehensive solution built with Python
@@ -134,3 +138,4 @@ contract-intelligence-platform/
 3. Upload contract documents through the web interface
 4. Interact with contracts using the AI-powered chat interface
 5. Set up reminders and manage contract lifecycle
+
