@@ -9,8 +9,8 @@ The core workflow is as follows:
 2.  **API Processing**: The API (`api/routes.py`) receives the uploaded file and stores it in Google Cloud Storage (`database/storage.py`).
 3.  **Text Conversion**: The uploaded contract is converted to markdown format using AI vision models (`model/extract.py`) and stored in GCS.
 4.  **Schema Extraction**: Key information is extracted from the contract using LLMs (`model/fill.py`) and structured schema is saved to Firestore database (`database/db.py`).
-5.  **Document Chunking**: The markdown content is chunked (`database/vector.py`) and stored in ChromaDB for semantic search.
-6.  **Interactive Analysis**: Users interact with contracts through a chat interface powered by an AI agent (`agent/`) built with LangGraph and deployed to LangSmith Cloud.
+5.  **Document Processing**: Extracted contract contexts are loaded directly into the agent’s runtime context for interactive analysis, eliminating the need for a dedicated vector database.
+6.  **Interactive Analysis**: Users interact with contracts through a chat interface powered by a LangChain-based AI agent deployed as part of the backend App Engine service; it exposes a REST API via `agent_router.py`, allowing the frontend and other services to query contract context directly.
 7.  **Contract Management**: Users can upload, delete, and modify contracts through the web interface.
 
 ## Source Code Paths
@@ -27,7 +27,6 @@ The core workflow is as follows:
 *   `model/fill.py`: Fills Pydantic schemas with extracted contract data using an LLM.
 *   `model/validate.py`: Validates contracts against legal standards and schema requirements.
 *   `database/db.py`: Handles the connection to and interaction with the Firestore database.
-*   `database/vector.py`: Handles splitting of contract documents into chunks and storing/querying them in ChromaDB.
 *   `database/storage.py`: Handles file uploads to Google Cloud Storage.
 *   `sessions/schemas.py`: Stores session metadata (session id, user id, expiry) for cookie-based authentication.
 *   `sessions/dal.py`: Reads, writes, and deletes session documents in Firestore.
@@ -44,13 +43,11 @@ The core workflow is as follows:
 
 *   **Firestore for Database**: Google Cloud Firestore is used as the primary database for storing and managing contract data.
 
-*   **ChromaDB for Vector Search**: ChromaDB is used as the vector database for storing document chunks and enabling semantic search capabilities.
+*   **Agent Context Loading**: Extracted contexts are loaded directly into the agent runtime rather than being persisted in a vector store, and the agent is exposed through `api/agent_router.py` so other routes can reuse its reasoning capabilities.
 
-*   **LangChain for Chunking**: LangChain's `RecursiveCharacterTextSplitter` is used to split documents into semantic chunks, facilitating better processing and retrieval.
+*   **LangChain for AI Agent**: LangChain powers the AI agent that performs contract reasoning through the REST API router.
 
-*   **LangGraph for AI Agent**: LangGraph is used to build the AI agent for advanced contract analysis and reasoning.
-
-*   **LangSmith Cloud**: The AI agent is deployed to LangSmith Cloud for monitoring and management.
+*   **LangSmith Cloud**: Used only for monitoring the LangChain-based agent during development.
 
 *   **FastAPI for API**: FastAPI is used to build the REST API, providing high performance and automatic documentation.
 

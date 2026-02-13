@@ -93,6 +93,8 @@ def handle_exceptions(func):
             raise HTTPException(status_code=400, detail=str(pve))
         except ValueError as ve:
             raise HTTPException(status_code=400, detail=str(ve))
+        except RuntimeError as re:
+            raise HTTPException(status_code=400, detail=str(re))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGetAgent } from "@/queries/agents";
 import { useGetContracts } from "@/queries/contracts";
+import { useNavigate } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 
-interface ChatInputParams {
+interface ChatInputProps {
     inputMessage: string;
     setInputMessage: React.Dispatch<React.SetStateAction<string>>;
     handleKeyPress: (e: React.KeyboardEvent) => void;
@@ -13,10 +15,27 @@ interface ChatInputParams {
     agentId: string;
 }
 
-const ChatInput = (params: ChatInputParams) => {
-    const { data: agent } = useGetAgent(params.agentId);
-      const { data: contracts } = useGetContracts();
-    
+const ChatInput = (props: ChatInputProps) => {
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
+
+    const { data: agent, error } = useGetAgent(props.agentId);
+
+    const { data: contracts, error: error2 } = useGetContracts();
+
+
+    useEffect(() => {
+        if (error?.cause === 401) {
+            queryClient.clear()
+            sessionStorage.setItem('isJustLoggedOut', 'true')
+            navigate("/");
+        }
+        if (error2?.cause === 401) {
+            queryClient.clear()
+            sessionStorage.setItem('isJustLoggedOut', 'true')
+            navigate("/");
+        }
+    }, [error, error2])
     const [displayPin, setDisplayPin] = useState(false);
 
     return (
@@ -28,10 +47,10 @@ const ChatInput = (params: ChatInputParams) => {
             <div className={displayPin ? "absolute bottom-15 left-2 px-2 py-2 rounded-lg outline-none border-2 border-green-200 space-y-2" : "hidden"}>
                 {contracts ? contracts.map((ct, idx) => {
                     // check if the contract is already selected
-                    const isSelected = params.selectedContract === ct.contract_id;
+                    const isSelected = props.selectedContract === ct.contract_id;
                     return (
                         <div className={isSelected ? "px-1 py-1 border-b border-green-200 cursor-pointer hover:bg-gray-100 rounded-lg bg-green-100" : "px-1 py-1 border-b border-green-200 cursor-pointer hover:bg-gray-100 rounded-lg"} key={idx} onClick={() => {
-                            params.setSelectedContract((prev) => {
+                            props.setSelectedContract((prev) => {
                                 if (prev === ct.contract_id) {
                                     return prev;
                                 } else {
@@ -45,16 +64,16 @@ const ChatInput = (params: ChatInputParams) => {
             </div>
             <input
                 type="text"
-                value={params.inputMessage}
-                onChange={(e) => params.setInputMessage(e.target.value)}
-                onKeyUp={params.handleKeyPress}
+                value={props.inputMessage}
+                onChange={(e) => props.setInputMessage(e.target.value)}
+                onKeyUp={props.handleKeyPress}
                 placeholder="Type your message..."
                 className="flex-1 px-4 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={params.isTyping}
+                disabled={props.isTyping}
             />
             <button
-                onClick={params.handleSendMessage}
-                disabled={!params.inputMessage.trim() || params.isTyping}
+                onClick={props.handleSendMessage}
+                disabled={!props.inputMessage.trim() || props.isTyping}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
                 Send

@@ -24,9 +24,19 @@ const Chat: React.FC = () => {
 
   useEffect(() => {
     if (agent.error) {
+
+      // check if the error is a 401 error
+      if (agent.error.cause === 401) {
+        queryClient.clear()
+        sessionStorage.setItem('isJustLoggedOut', 'true')
+        navigate("/");
+      }
+
       console.error("Error fetching agent:", agent.error);
-      navigate("/account");
+      navigate("/contracts");
     }
+
+
   }, [agent.isError])
 
   useEffect(() => {
@@ -42,12 +52,12 @@ const Chat: React.FC = () => {
   useEffect(() => {
     setMessages(sortedMessages);
   }, [agentId])
-  
+
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [selectedContract, setSelectedContract] = useState<string | null>(agent.data?.selected_contract || null);
-  
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,6 +81,13 @@ const Chat: React.FC = () => {
         },
         onError: (error) => {
           console.error("Error adding contract to agent:", error);
+
+          // check if error is 401
+          if (error.cause === 401) {
+            queryClient.clear();
+            sessionStorage.setItem('isJustLoggedOut', 'true')
+            navigate("/")
+          }
         }
       })
     }
@@ -94,6 +111,13 @@ const Chat: React.FC = () => {
       },
       onError: (error) => {
         console.error("Error calling agent:", error);
+
+        // check if error is 401
+        if (error.cause === 401) {
+          queryClient.clear();
+          sessionStorage.setItem('isJustLoggedOut', 'true')
+          navigate("/")
+        }
         setIsTyping(false);
       }
     })
@@ -120,6 +144,12 @@ const Chat: React.FC = () => {
       },
       onError: (error) => {
         console.error("Error renaming agent:", error);
+        // check if error is 401
+        if (error.cause === 401) {
+          queryClient.clear();
+          sessionStorage.setItem('isJustLoggedOut', 'true')
+          navigate("/")
+        }
       },
       onSettled: () => {
         setIsRenaming(false);

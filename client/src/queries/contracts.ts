@@ -18,6 +18,12 @@ export const useGetContracts = () => {
         return data
       }
 
+      if (response.status === 401) {
+        throw new Error('unauthorized', {
+          cause: 401
+        })
+      }
+
     },
     retry: 3,
     retryDelay: 1000,
@@ -53,6 +59,11 @@ export const useUploadContract = () => {
         throw new Error('Failed to upload contract');
       }
 
+      if (response.status === 401) {
+        throw new Error('unauthorized', {
+          cause: 401
+        })
+      }
       const data: ContractBase = await response.json()
 
       return data
@@ -76,6 +87,12 @@ export const useGetContractWithoutValidation = (contractId: string) => {
       if (!response.ok) {
         throw new Error('Failed to fetch contract details');
       }
+
+      if (response.status === 401) {
+        throw new Error('Unauthorized', {
+          cause: 401
+        })
+      }
       const data: ContractBase = await response.json();
       return data;
     },
@@ -95,6 +112,12 @@ export const useGetContract = (contractId: string | null) => {
       })
       if (!response.ok) {
         throw new Error('Failed to fetch contract details');
+      }
+      
+      if (response.status === 401) {
+        throw new Error('unauthorized', {
+          cause: 401
+        })
       }
       const data: Contract = await response.json();
       return data;
@@ -123,42 +146,48 @@ export const useFillContract = (contractId: string) => {
         throw new Error('Failed to fill contract');
       }
 
+      if (response.status === 401) {
+        throw new Error('unauthorized', {
+          cause: 401
+        })
+      }
+
       const data: Contract = await response.json();
       return data;
-    },
-    onError: (error) => {
-      console.error('Error filling contract:', error);
-    },
-    onSuccess: () => {
-      console.log('Contract filled successfully');
-    },
+    }
 
   })
 }
 
 
 export const useValidateContract = (contractId: string) => {
-  return useQuery({
-    queryKey: ['contract', "validation", contractId],
-    queryFn: async () => {
+  return useMutation({
+    mutationKey: ['contract', "validation", contractId],
+    mutationFn: async () => {
       const api_origin = import.meta.env.VITE_API_ORIGIN
-      const response = await fetch(`${api_origin}/contract/validate/${contractId}`, {
-        method: 'GET',
+      const response = await fetch(`${api_origin}/contract/validate`, {
+        method: 'POST',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ "contract_id": contractId })
       })
 
       if (!response.ok) {
         throw new Error('Failed to validate contract');
       }
+      if (response.status === 401) {
+        throw new Error('Unauthorized', {
+          cause: 401
+        })
+      }
       const data: ValidationReport = await response.json();
       return data;
     },
-    enabled: false,
+    
     retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchIntervalInBackground: false,
+
   })
 }
 
@@ -167,7 +196,7 @@ export const useGetValidationReport = (contractId: string) => {
     queryKey: ['contract', "validation", contractId],
     queryFn: async () => {
       const api_origin = import.meta.env.VITE_API_ORIGIN
-      const response = await fetch(`${api_origin}/contract/validate/get/${contractId}`, {
+      const response = await fetch(`${api_origin}/contract/validate/${contractId}`, {
         method: 'GET',
         credentials: 'include',
       })

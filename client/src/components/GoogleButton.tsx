@@ -5,7 +5,7 @@ const GoogleButton = () => {
         <div className="mb-12">
             <button
                 onClick={() => auth.signinRedirect()}
-                className="inline-flex items-center px-8 py-4 bg-white border-2 border-gray-300 rounded-lg shadow-lg hover:shadow-xl hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="cursor-pointer inline-flex items-center px-8 py-4 bg-white border-2 border-gray-300 rounded-lg shadow-lg hover:shadow-xl hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <div
                     className="flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"

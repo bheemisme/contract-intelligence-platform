@@ -18,7 +18,7 @@ The platform provides a comprehensive contract management solution with the foll
    - The API receives the uploaded file and stores it in Google Cloud Storage
    - The contract is converted to markdown format and stored in GCS
    - Key information is extracted from the contract and structured schema is saved to Firestore database
-   - The markdown content is chunked and stored in ChromaDB for semantic search
+   - Extracted contexts are loaded directly into the agent’s context for interactive analysis instead of relying on a vector database
 
 3. **Interactive Analysis**: Users can interact with their contracts through a chat interface powered by an AI agent, asking queries and setting up reminders.
 

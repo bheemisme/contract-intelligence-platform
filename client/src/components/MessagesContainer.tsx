@@ -2,7 +2,11 @@ import type { Message } from "@/agent-schemas";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const MessagesContainer: React.FC<{ messages: Message[] }> = ({ messages }) => {
+interface MessagesContainerProps {
+    messages: Message[]
+}
+
+const MessagesContainer: React.FC<MessagesContainerProps> = ({ messages }) => {
     // filter out system and tool messages
     messages = messages.filter(message => message.type === 'human' || message.type === 'ai');
 

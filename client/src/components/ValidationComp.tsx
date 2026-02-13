@@ -2,39 +2,66 @@ import { useEffect, useState } from "react"
 import { useValidateContract, useGetValidationReport } from "../queries/contracts"
 import type { Contract, ContractBase, ValidationReport } from "../contract-schemas"
 import { renderValue } from "./utils"
+import { useNavigate } from "react-router"
+import { useQueryClient } from "@tanstack/react-query"
 
 type ValidatingStatus = "none" | "validating" | "validated" | "error"
-const ValidationComp: React.FC<{ contract: Contract | ContractBase }> = ({ contract }) => {
+
+interface ValidationCompProps {
+    contract: Contract | ContractBase
+}
+
+const ValidationComp: React.FC<ValidationCompProps> = ({ contract }) => {
+    const queryClient = useQueryClient()
+    const navigate = useNavigate()
 
     const { data, isLoading, error } = useGetValidationReport(contract.contract_id)
-    const queryClient = useValidateContract(contract.contract_id)
+
+    useEffect(() => {
+        if (error?.cause == 401) {
+            queryClient.clear()
+            navigate("/")
+        }
+        if (data) {
+            setReport(data)
+        } else {
+            setReport(null)
+        }
+    }, [error, data])
+
+
+    const getValidateContract = useValidateContract(contract.contract_id)
 
     const [report, setReport] = useState<ValidationReport | null>(null)
     const [isValidating, setIsValidating] = useState<ValidatingStatus>("none")
 
     const onClick = () => {
         setIsValidating("validating")
-        queryClient.refetch().then((val) => {
-            if (val.data) {
-                setReport(val.data)
-            }else{
-                setReport(null)
+        getValidateContract.mutate(undefined, {
+            onSuccess: (data) => {
+                if (data) {
+                    setReport(data)
+                } else {
+                    setReport(null)
+                }
+                setIsValidating("validated")
+            },
+            onError: (error) => {
+                if (error.cause == 401) {
+                    queryClient.clear()
+                    navigate("/")
+                }
+                setIsValidating("error")
+
+            },
+            onSettled: () => {
+                setIsValidating("none")
             }
-            setIsValidating("validated")
-        }).catch(() => {
-            setIsValidating("error")
-        }).finally(() => {
-            setIsValidating("none")
         })
+
     }
 
-    useEffect(() => {
-        if (data) {
-            setReport(data)
-        } else {
-            setReport(null)
-        }
-    }, [data])
+
 
     return <div className="bg-white rounded-xl border border-green-200 p-6 shadow-md space-y-4">
 

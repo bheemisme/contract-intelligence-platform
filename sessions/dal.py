@@ -64,7 +64,7 @@ def get_active_sessions_by_user(db: Client, user_id: str) -> list[Session]:
     return [Session(**doc.to_dict()) for doc in docs]  # type: ignore
 
 
-def delete_session(db: Client, session_id: str) -> bool:
+def delete_session(db: Client, session_id: str):
     """
     Delete a session from the sessions collection by session ID.
 
@@ -72,15 +72,10 @@ def delete_session(db: Client, session_id: str) -> bool:
         db: Firestore client instance
         session_id: The session ID to delete
 
-    Returns:
-        bool: True if the session was deleted, False if the session was not found
     """
     doc_ref = db.collection("sessions").document(session_id)
-    doc = doc_ref.get()
-    if not doc.exists:
-        return False
     doc_ref.delete()
-    return True
+
 
 
 if __name__ == "__main__":

@@ -55,7 +55,7 @@ def main():
     
 
     if os.environ.get("ENV") == "dev":
-        reload = False
+        reload = True
 
     print("Hello from contract-intelligence-platform!")
 

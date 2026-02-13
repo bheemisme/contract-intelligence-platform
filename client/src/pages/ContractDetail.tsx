@@ -24,16 +24,18 @@ const ContractDetail: React.FC = () => {
     const getContractUnvalQuery = useGetContractWithoutValidation(contractId);
 
     useEffect(() => {
-        if (error?.message === 'unauthorized') {
+        if (error?.cause === 401) {
             queryClient.clear()
+            sessionStorage.setItem('isJustLoggedOut', 'true')
             navigate('/')
         }
 
-        if(getContractUnvalQuery.error?.message === 'unauthorized') {
+        if(getContractUnvalQuery.error?.cause === 401) {
             queryClient.clear()
+            sessionStorage.setItem('isJustLoggedOut', 'true')
             navigate('/')
         }
-    }, [error])
+    }, [error, getContractUnvalQuery.error])
 
 
 

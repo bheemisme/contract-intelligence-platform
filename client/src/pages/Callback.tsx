@@ -17,11 +17,16 @@ const Callback = () => {
                 "onSuccess": async () => {
                     console.log("user authenticated and signed in:")
                     await auth.removeUser()
+
+                    // set a session variable
+                    sessionStorage.setItem("isJustLoggedIn", "true")
                     navigate("/account")
                 },
                 "onError": (error) => {
                     console.error(error)
+                    sessionStorage.setItem("isSignInError", "true")
                     navigate("/")
+
                 }
             })
         }

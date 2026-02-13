@@ -9,22 +9,22 @@ interactive interface for querying contract details.
 
 [https://cip-client-dot-contract-intelligence-platform.el.r.appspot.com/](https://cip-client-dot-contract-intelligence-platform.el.r.appspot.com/)
 
+The backend and frontend are deployed on Google Cloud Platform's App Engine.
+
 ## System Architecture
 
 The Contract Intelligence Platform is a comprehensive solution built with Python
 backend, React frontend, and multiple AI services. The system leverages Google
-Cloud Platform for storage and databases, ChromaDB for vector search, and
-advanced AI agents for contract analysis.
+Cloud Platform for storage and databases and AI agents for contract analysis.
 
 ### Core Components
 
 - **Backend API**: FastAPI-based REST API for handling contract uploads and
-  processing
-- **AI Processing Pipeline**: Multi-step workflow for contract analysis using
-  vision models and LLMs
-- **Vector Database**: ChromaDB for semantic search capabilities
+  processing involving extraction, validation, and storage.
 - **Frontend**: React application with modern UI for contract management
-- **AI Agent**: LangGraph-powered agent for interactive contract queries
+- **AI Agent**: LangChain agent for interactive contract queries
+- **Storage**: Google Cloud Storage for contract documents and Firestore for
+  structured data
 
 ## Core Workflow
 
@@ -36,11 +36,10 @@ advanced AI agents for contract analysis.
    using AI vision models and stored in GCS
 4. **Schema Extraction**: Key information is extracted from the contract using
    LLMs and structured schema is saved to Firestore database
-5. **Document Chunking**: The markdown content is chunked and stored in ChromaDB
-   for semantic search
+5. **Contract Validation**: The extracted contract information is validated against legal
+   standards using LLMs
 6. **Interactive Analysis**: Users interact with contracts through a chat
-   interface powered by an AI agent built with LangGraph and deployed to
-   LangSmith Cloud
+   interface powered by an AI agent built with LangChain
 7. **Contract Management**: Users can upload, delete, and modify contracts as
    needed
 
@@ -48,8 +47,11 @@ advanced AI agents for contract analysis.
 
 ```
 contract-intelligence-platform/
-├── agent/                    # AI agent code built with LangGraph
+├── agent/                    # AI agent code built with LangChain
+├── user/                     # User management and authentication
+├── sessions/                 # Session management
 ├── api/                      # FastAPI routes and backend logic
+├── api_testing/             # Bruno API testing files
 ├── client/                   # React frontend application
 │   ├── src/
 │   │   ├── components/       # Reusable React components
@@ -76,7 +78,6 @@ contract-intelligence-platform/
 - **Python 3.12+**
 - **FastAPI**: High-performance API framework
 - **Google Cloud Platform**: Storage, Firestore, AI services
-- **ChromaDB**: Vector database for semantic search
 - **LangGraph**: Framework for building AI agents
 
 ### Frontend
@@ -89,9 +90,9 @@ contract-intelligence-platform/
 
 ### AI/ML Services
 
-- **OpenAI GPT-4 Vision**: Text extraction from documents
+- **Google Gemini**: Text extraction from documents
 - **Google Gemini**: Schema filling and validation
-- **LangSmith Cloud**: AI agent deployment and monitoring
+- **LangSmith Cloud**: AI agent monitoring
 
 ## Getting Started
 
@@ -128,7 +129,6 @@ contract-intelligence-platform/
 
 4. **Environment Configuration**
    - Set up Google Cloud credentials
-   - Configure ChromaDB connection
    - Set API keys for AI services
 
 ## Usage

@@ -1,9 +1,11 @@
 import { useCreateAgent } from "@/queries/agents";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { twMerge } from 'tailwind-merge';
 
 interface AgentFormProps {
     setIsAgentFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    className: string;
 }
 const AgentForm = (params: AgentFormProps) => {
 
@@ -18,15 +20,18 @@ const AgentForm = (params: AgentFormProps) => {
                 params.setIsAgentFormOpen(false);
                 navigate(`/chat/${agentId}`);
             }
-            
+
         })
     }
     return (
-        <div className="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-900 bg-opacity-90 p-6 rounded-lg shadow-lg z-50 space-y-2">
+        <div className={twMerge("fixed", params.className, "bg-green-900 text-white p-6 rounded-lg shadow-lg z-50 space-y-2", "flex flex-col items-center")}>
             <div>Create Agent</div>
-            <div>
+            <div className="flex flex-col space-y-3">
                 <input type="text" placeholder="Agent Name" className="border-2 border-green-200 rounded-lg px-2 py-1 outline-none" value={agentName} onChange={(e) => setAgentName(e.target.value)} />
-                <button className="ml-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded" onClick={handleCreateAgent}>Create</button>
+                <div className="flex flex-row items-center">
+                    <button className="ml-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded" onClick={handleCreateAgent}>Create</button>
+                    <button className="ml-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded" onClick={() => params.setIsAgentFormOpen(false)}>Cancel</button>
+                </div>
             </div>
 
 

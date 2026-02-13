@@ -1,16 +1,29 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type { Contract, ContractBase } from "../contract-schemas";
 import { useFillContract } from "../queries/contracts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { renderValue } from "../components/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 type FillingState = "none" | "filling" | "filled" | "error"
 
+interface ContractInfoProps {
+    contract: Contract | ContractBase
+}
 
-const ContractInfo: React.FC<{ contract: Contract | ContractBase }> = ({ contract }) => {
-
+const ContractInfo: React.FC<ContractInfoProps> = ({ contract }) => {
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const fillContract = useFillContract(contract.contract_id);
+
+    useEffect(() => {
+        if (fillContract.error?.cause === 401) {
+            queryClient.clear()
+            sessionStorage.setItem('isJustLoggedOut', 'true')
+            navigate("/");
+        }
+    }, [fillContract.error])
     const [isFilling, setIsFilling] = useState<FillingState>("none")
     const onFillContract = () => {
         setIsFilling("filling")

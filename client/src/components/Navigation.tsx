@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate, type NavigateFunction } from 'react-router';
 import { useDeleteAgent, useGetAllAgents } from "@/queries/agents"
 import AgentForm from "./AgentForm";
 import { useQueryClient } from '@tanstack/react-query';
 
-const buildChatSubItems = () => {
+const buildChatSubItems = (navigate: NavigateFunction) => {
   const agents = useGetAllAgents()
+  const queryClient = useQueryClient()
+
+  if (agents.error?.cause === 401) {
+    queryClient.clear()
+    sessionStorage.setItem('isJustLoggedOut', 'true')
+    navigate('/')
+  }
   return agents.data?.map((val) => ({
     path: `/chat/${val.agent_id}`,
     label: val.name,
@@ -29,13 +36,24 @@ interface DesktopNavItemsListProps {
   setIsAgentFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = ({ items, location, isChatOpen, toggleChat, isAgentFormOpen, setIsAgentFormOpen }) => {
+interface MobileNavItemListProps {
+  items: ReturnType<typeof navItems>;
+  location: ReturnType<typeof useLocation>;
+  isChatOpen: boolean;
+  toggleChat: () => void;
+  closeMobileMenu: () => void;
+  isAgentFormOpen: boolean;
+  setIsAgentFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  
+}
+
+const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = (props) => {
   const deleteAgent = useDeleteAgent()
   const queryClient = useQueryClient()
 
   return (
     <nav className="flex-1 px-4 py-4 space-y-2">
-      {items.map((item, idx) => (
+      {props.items.map((item, idx) => (
         <div key={idx}>
           {item.subItems ? (
             <div>
@@ -45,14 +63,14 @@ const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = ({ items, locati
                   : 'text-green-100 hover:bg-green-700 hover:text-white'
                   }`}
               >
-                <button onClick={toggleChat} className="flex items-center flex-1">
+                <button onClick={props.toggleChat} className="flex items-center flex-1">
                   <span className="mr-3">{item.icon}</span>
                   {item.label}
                 </button>
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => {
-                      setIsAgentFormOpen(!isAgentFormOpen);
+                      props.setIsAgentFormOpen(!props.isAgentFormOpen);
                     }}
                     className="p-1 rounded hover:bg-green-600 transition-colors"
                     title="New Chat"
@@ -60,14 +78,14 @@ const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = ({ items, locati
                     ➕
                   </button>
                   <button
-                    onClick={toggleChat}
+                    onClick={props.toggleChat}
                     className="p-1 rounded hover:bg-green-600 transition-colors"
                   >
                     ▼
                   </button>
                 </div>
               </div>
-              {isChatOpen && (
+              {props.isChatOpen && (
                 <div className="ml-6 mt-1 space-y-1">
                   {item.subItems.map((subItem, idx) => (
                     <div className="flex flex-row items-center justify-between" key={idx}>
@@ -116,19 +134,12 @@ const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = ({ items, locati
   );
 };
 
-const MobileNavItemList: React.FC<{
-  items: ReturnType<typeof navItems>;
-  location: ReturnType<typeof useLocation>;
-  isChatOpen: boolean;
-  toggleChat: () => void;
-  closeMobileMenu: () => void;
-  navigate: ReturnType<typeof useNavigate>;
-}> = ({ items, location, isChatOpen, toggleChat, closeMobileMenu, navigate }) => {
+const MobileNavItemList: React.FC<MobileNavItemListProps> = (props) => {
   const queryClient = useQueryClient();
   const deleteAgent = useDeleteAgent();
   return (
     <nav className="flex-1 px-4 py-4 space-y-2">
-      {items.map((item, idx) => (
+      {props.items.map((item, idx) => (
         <div key={idx}>
           {item.subItems ? (
             <div>
@@ -138,33 +149,35 @@ const MobileNavItemList: React.FC<{
                   : 'text-green-100 hover:bg-green-700 hover:text-white'
                   }`}
               >
-                <button onClick={toggleChat} className="flex items-center flex-1">
+                <button onClick={props.toggleChat} className="flex items-center flex-1">
                   <span className="mr-3">{item.icon}</span>
                   {item.label}
                 </button>
                 <div className="flex items-center space-x-1">
                   <button
-                    onClick={() => navigate('/chat')}
+                    onClick={() => {
+                      props.setIsAgentFormOpen(!props.isAgentFormOpen);
+                    }}
                     className="p-1 rounded hover:bg-green-600 transition-colors"
                     title="New Chat"
                   >
                     ➕
                   </button>
                   <button
-                    onClick={toggleChat}
+                    onClick={props.toggleChat}
                     className="p-1 rounded hover:bg-green-600 transition-colors"
                   >
                     ▼
                   </button>
                 </div>
               </div>
-              {isChatOpen && (
+              {props.isChatOpen && (
                 <div className="ml-6 mt-1 space-y-1">
                   {item.subItems.map((subItem, idx) => (
                     <div className="flex flex-row items-center justify-between" key={idx}>
                       <Link
                         to={subItem.path}
-                        onClick={closeMobileMenu}
+                        onClick={props.closeMobileMenu}
                         className={`flex items-center px-4 py-2 text-xs font-medium rounded-md transition-colors ${location.pathname === subItem.path
                           ? 'bg-green-600 text-white'
                           : 'text-green-200 hover:bg-green-600 hover:text-white'
@@ -191,7 +204,7 @@ const MobileNavItemList: React.FC<{
             <Link
               to={item.path!}
               onClick={() => {
-                closeMobileMenu();
+                props.closeMobileMenu();
               }}
               className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${location.pathname === item.path
                 ? 'bg-green-700 text-white'
@@ -210,15 +223,17 @@ const MobileNavItemList: React.FC<{
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate()
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChatSubmenuOpen, setIsChatSubmenuOpen] = useState(false);
-  const chats = buildChatSubItems();
+
+  const chats = buildChatSubItems(navigate);
   const items = navItems(chats);
 
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false);
   const toggleChat = () => setIsChatSubmenuOpen(open => !open);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
-  const navigate = useNavigate()
 
 
 
@@ -229,7 +244,7 @@ const Navigation: React.FC = () => {
         <div className="flex items-center justify-center h-16 bg-green-900">
           <h1 className="text-xl font-bold">CIP</h1>
         </div>
-        {isAgentFormOpen && <AgentForm setIsAgentFormOpen={setIsAgentFormOpen} />}
+        {isAgentFormOpen && <AgentForm className="top-1/2 left-1/2 transform -translate-y-1/2 duration-1000" setIsAgentFormOpen={setIsAgentFormOpen} />}
         <DesktopNavItemsList
           items={items}
           location={location}
@@ -243,6 +258,8 @@ const Navigation: React.FC = () => {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-green-800 text-white z-50">
+        {isAgentFormOpen && <AgentForm className=" left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2" setIsAgentFormOpen={setIsAgentFormOpen} />}
+
         <div className="flex items-center justify-between h-16 px-4">
           <h1 className="text-xl font-bold">CIP</h1>
           <button
@@ -274,7 +291,8 @@ const Navigation: React.FC = () => {
           isChatOpen={isChatSubmenuOpen}
           toggleChat={toggleChat}
           closeMobileMenu={closeMobileMenu}
-          navigate={navigate}
+          isAgentFormOpen={isAgentFormOpen}
+          setIsAgentFormOpen={setIsAgentFormOpen}
         />
       </div>
 

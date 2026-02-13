@@ -1,5 +1,7 @@
-from typing import Annotated
-from fastapi import APIRouter, Body, Depends
+from typing import Annotated, List
+from fastapi import APIRouter, Body, Depends, Path, Response
+from fastapi.responses import StreamingResponse
+from langchain.messages import AIMessage
 from api.schemas import CallAgentRequest, CreateAgentRequest, RenameAgentRequest
 from api.utils import (
     handle_exceptions,
@@ -13,7 +15,8 @@ from sessions import schemas as session_schemas
 from agent import schemas as agent_schemas
 from agent import dal as agent_dal
 from agent import utils as agent_utils
-
+from datetime import datetime, timezone
+from langchain.messages import AIMessageChunk
 import logging
 import asyncio
 
@@ -72,6 +75,80 @@ async def get_all_agents(
     )
 
     return agents
+
+
+# write a call_agent route but for streaming the llm response
+@router.get("/stream")
+@handle_exceptions
+async def stream_agent(
+    db_client: Annotated[firestore.Client, Depends(get_firestore)],
+    bucket: Annotated[storage.Bucket, Depends(get_bucket)],
+    session: Annotated[session_schemas.Session, Depends(validate_session)],
+    response: Response,
+    agent_id: str,
+    message: str,
+):
+    """
+    Call an agent for the given session.
+
+    Args:
+        db_client: Firestore client.
+        session: Session object.
+        agent_id: Agent ID.
+        message: Message to send to the agent.
+        selected_contracts: List of selected contract IDs.
+
+    Returns:
+        Agent object.
+    """
+    response.headers["Cache-Control"] = "no-store"
+    logger.debug(f"calling agent with ID: {agent_id} for user: {session.user_id}")  
+    
+    agent_doc = await asyncio.to_thread(
+        agent_dal.get_agent_document, db_client, agent_id
+    )
+    
+    logger.debug(f"fetched agent document with ID: {agent_id} for user: {session.user_id}")
+    logger.debug(f"agent document details: {agent_doc.selected_contract}")
+
+    if response is None:
+        raise ValueError("Agent not found")
+
+    if agent_doc.user_id != session.user_id:
+        raise ValueError("User not authorized to call this agent")
+    
+    agent, history, messages = await asyncio.to_thread(agent_utils.prepare_agent, db_client, bucket, agent_id, message)
+
+
+    async def streamer():
+        
+        chunks: List[AIMessageChunk] = []
+        try:
+            async for chunk in agent_utils.stream_agent(agent_id, agent, history+messages):
+                chunks.append(chunk)
+                yield chunk.content
+            
+        finally:
+            logger.debug(f"completed streaming agent response for agent_id: {agent_id}")
+            
+            # combine all chunks into a single AIMessage
+            combined_content = "".join([chunk.content for chunk in chunks]) # type: ignore
+            
+            ai_message = AIMessage(content=combined_content)
+            ai_message.additional_kwargs['created_at'] = datetime.now(
+                timezone.utc
+            ).timestamp()
+            
+            messages.append(ai_message)
+            
+            await asyncio.to_thread(
+                agent_dal.add_messages, db_client, agent_id, messages
+            )
+            
+            logger.debug(f"saved new messages to database")
+        
+        
+    return StreamingResponse(streamer(), media_type="text/event-stream") # type: ignore
 
 
 @router.get("/{agent_id}")
@@ -211,10 +288,14 @@ async def call_agent(
         raise ValueError("User not authorized to call this agent")
 
     # Call the agent
-    messages = await asyncio.to_thread(
-        agent_utils.call_agent, db_client, bucket, req.agent_id, req.message
-    )
+    agent, history, messages = await asyncio.to_thread(agent_utils.prepare_agent, db_client, bucket, req.agent_id, req.message)
+
+
+    message = await agent_utils.call_agent(req.agent_id, agent, history + messages)
+    
     logger.debug(f"agent generated response")
+    
+    messages.append(message)
 
     await asyncio.to_thread(
         agent_dal.add_messages, db_client, agent_id=req.agent_id, messages=messages

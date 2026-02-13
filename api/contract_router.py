@@ -4,6 +4,7 @@ from typing import Annotated, List, Union
 from fastapi import Body, Depends, Path, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRouter
+from openai import BaseModel
 from api.utils import validate_session, handle_exceptions, get_bucket, get_firestore
 from connectors import gcs_connector
 from contracts import schemas as contracts_schemas, dal as contracts_dal
@@ -295,19 +296,21 @@ async def get_contract_md(
 
     return FileResponse(path=temp_md_path, media_type="text/markdown")
 
+class ValidateContractDTO(BaseModel):
+    contract_id: str
 
-@router.get("/validate/{contract_id}")
+@router.post("/validate")
 @handle_exceptions
 async def validate_contract(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     bucket: Annotated[storage.Bucket, Depends(get_bucket)],
     session: Annotated[session_schemas.Session, Depends(validate_session)],
-    contract_id: Annotated[str, Path(description="The ID of the contract to validate")],
+    request: ValidateContractDTO = Body(...),
 ) -> contracts_schemas.ValidationReport:
 
-    logger.debug(f"user session validated for validating contract_id: {contract_id}")
+    logger.debug(f"user session validated for validating contract_id: {request.contract_id}")
     contract = await asyncio.to_thread(
-        contracts_dal.get_contract, db_client, contract_id
+        contracts_dal.get_contract, db_client, request.contract_id
     )
 
     if contract is None:
@@ -320,7 +323,7 @@ async def validate_contract(
     md_uri = contract.md_uri
 
     temp_dir = tempfile.gettempdir()
-    temp_md_path = os.path.join(temp_dir, f"{contract_id}.md")
+    temp_md_path = os.path.join(temp_dir, f"{request.contract_id}.md")
     if md_uri is not None:
         md_file = await asyncio.to_thread(gcs_connector.download_file, bucket, md_uri)
 
@@ -338,7 +341,7 @@ async def validate_contract(
     logger.log(logging.DEBUG, "validation report is saved to database")
     return validation_report
 
-@router.get("/validate/get/{contract_id}")
+@router.get("/validate/{contract_id}")
 @handle_exceptions
 async def get_validation_report(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],

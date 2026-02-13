@@ -15,6 +15,13 @@ export const useGetAgent = (agent_id: string) => {
                 throw new Error("Failed to fetch agent");
             }
 
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
+            }
+
             const data: Agent = await response.json();
             return data;
         },
@@ -39,6 +46,13 @@ export const useGetAllAgents = () => {
 
             if (!response.ok) {
                 throw new Error("Failed to fetch agents");
+            }
+
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
             }
 
             const data: Agent[] = await response.json();
@@ -80,6 +94,13 @@ export const useCreateAgent = () => {
                 throw new Error("Failed to create agent");
             }
 
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
+            }
+
             const agentId: string = await response.json();
             return agentId;
         },
@@ -103,6 +124,13 @@ export const useDeleteAgent = () => {
 
             if (!response.ok) {
                 throw new Error("Failed to delete agent");
+            }
+
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
             }
         },
         onSuccess: () => {
@@ -130,6 +158,13 @@ export const useCallAgent = () => {
                 throw new Error("Failed to call agent");
             }
 
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
+            }
+
             const message_response: Message = await response.json();
             return message_response;
         }
@@ -154,6 +189,13 @@ export const useAddContractToAgent = (agentId: string) => {
             if (!response.ok) {
                 throw new Error("Failed to add contract to agent");
             }
+
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
+            }
         },
        
     })
@@ -177,7 +219,12 @@ export const useRenameAgent = (agentId: string) => {
                 throw new Error("Failed to rename agent");
             }
            
-            
+            // check for 401 http error
+            if (response.status === 401) {
+                throw new Error("Unauthorized", {
+                    "cause": 401
+                });
+            }
         }
     })
 }

@@ -47,6 +47,12 @@ export const useGetUser = () => {
             if (!response.ok) {
                 throw new Error("session is inactive")
             }
+
+            if (response.status == 401) {
+                throw new Error("unauthorized", {
+                    cause: 401
+                })
+            }
             const data: UserSchema = await response.json()
             return data
 
@@ -56,9 +62,9 @@ export const useGetUser = () => {
         retry: 3,
         retryDelay: 1000,
         staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-        refetchOnMount: false,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        refetchOnMount: true,
 
     })
 }
@@ -68,6 +74,7 @@ export const logoutUser = async () => {
     const api_origin = import.meta.env.VITE_API_ORIGIN
 
     try {
+
         const response = await fetch(`${api_origin}/user/logout`, {
             "method": "POST",
             "credentials": "include"

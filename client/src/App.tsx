@@ -42,6 +42,7 @@ const LoadingIndicator: React.FC<{ message?: string }> = ({ message = 'Verifying
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { error, data: user } = useGetUser()
+  
   const [state, setState] = useState<"loading" | "ready">("loading");
   useEffect(() => {
     if (user || error) {
@@ -52,7 +53,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <LoadingIndicator message="Verifying access to contracts..." />;
   }
 
-  return user ? <>{children}</> : <Navigate to="/" replace />;
+  if (error) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+
+
 };
 
 

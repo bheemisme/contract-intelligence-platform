@@ -12,8 +12,7 @@
 *   **Pydantic**: For data validation and defining schemas.
 *   **Google Cloud Firestore**: The primary database for storing and managing contract data.
 *   **Google Cloud Storage**: Used for storing contract documents.
-*   **ChromaDB**: Vector database for storing document chunks and enabling semantic search.
-*   **LangGraph**: Framework for building AI agents with advanced reasoning capabilities.
+*   **LangChain**: Framework for building AI agents with advanced reasoning capabilities exposed through `api/agent_router.py`.
 *   **LangSmith Cloud**: Platform for deploying and monitoring AI agents.
 
 ## Frontend Technologies
@@ -32,9 +31,7 @@
 *   **google-genai**: For interacting with the Google Generative AI models.
 *   **google-cloud-firestore**: For interacting with the Firestore database.
 *   **google-cloud-storage**: For interacting with Google Cloud Storage.
-*   **chromadb**: For interacting with the ChromaDB vector database.
 *   **langchain**: For document chunking and text splitting.
-*   **langgraph**: For building AI agents.
 *   **PyMuPDF (`fitz`)**: For converting PDF pages to images for the Vision API.
 *   **pdfkit**: For converting generated HTML contracts into PDFs.
 *   **python-dotenv**: For managing environment variables.

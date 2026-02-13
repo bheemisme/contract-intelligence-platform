@@ -156,16 +156,18 @@ async def get_user(
 @handle_exceptions
 async def logout_user(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
-    session: Annotated[session_schemas.Session, Depends(validate_session)],
+    session_id: Optional[str] = Cookie(None, alias="session_id")
 ):
 
     logger.debug(f"user session validated for logout")
 
-    is_deleted = await asyncio.to_thread(
-        session_dal.delete_session, db_client, str(session.session_id)
-    )
+    if not session_id:
+        raise HTTPException(status_code=401, detail="unauthorized")
 
-    return is_deleted
+
+    await asyncio.to_thread(
+        session_dal.delete_session, db_client, str(session_id)
+    )
 
 
 if __name__ == "__main__":

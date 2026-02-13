@@ -3,35 +3,43 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { logoutUser, useGetUser } from '@/queries/user';
 import { useQueryClient } from '@tanstack/react-query';
-
+import Flag from '@/components/Flag';
 const Account: React.FC = () => {
-
+  const queryClient = useQueryClient()
   const navigate = useNavigate();
   const { error, data: user } = useGetUser()
 
-  const queryClient = useQueryClient()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  
+
   // if there is an error fetching user data, redirect to home since session is inactive
   useEffect(() => {
     if (error) {
-      queryClient.removeQueries({
-        "queryKey": ["user"]
-      })
+      queryClient.clear()
       navigate("/")
     }
   }, [error])
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showFlag, setShowFlag] = useState(false); // State to control flag visibility]
+
+  useEffect(() => {
+    // read session variable
+    const isJustLoggedIn = sessionStorage.getItem("isJustLoggedIn")
+    if (isJustLoggedIn) {
+      setShowFlag(true)
+      sessionStorage.removeItem("isJustLoggedIn")
+    }
+  }, [])
   const handleLogout = async () => {
 
     setIsLoggingOut(true);
     await logoutUser()
-    
-    queryClient.removeQueries({
-        "queryKey": ["user"]
-    })
+
+    queryClient.clear()
     navigate('/')
+
+    // set session variable to show flag on home page
+    sessionStorage.setItem('isJustLoggedOut', 'true')
     
     setIsLoggingOut(false);
   };
@@ -42,8 +50,15 @@ const Account: React.FC = () => {
 
   };
 
+  setTimeout(() => {
+    setShowFlag(false)
+  }, 5000);
+
   return (
     <div className="container mx-auto p-4 bg-green-50 min-h-screen">
+      {
+        showFlag && <Flag message='Successfully Logged In' flag='success' setShowFlag={setShowFlag} />
+      }
       {/* Add logout loading animation */}
       {isLoggingOut && (
         <div className="fixed inset-0 flex items-center justify-center z-50">

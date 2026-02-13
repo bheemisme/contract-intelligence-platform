@@ -11,13 +11,16 @@ import { QueryClient } from '@tanstack/react-query';
 const Contracts = () => {
 
   const queryClient = new QueryClient()
+  const navigate = useNavigate()
   const { isLoading, error, data: contracts } = useGetContracts()
 
+
   const [openModal, setOpenModal] = useState(false);
-  const navigate = useNavigate()
   useEffect(() => {
-    if (error?.message === 'unauthorized') {
+    if (error?.cause === 401) {
       queryClient.clear()
+      // set session varaiable
+      sessionStorage.setItem('isJustLoggedOut', 'true')
       navigate('/')
     }
   }, [error])
