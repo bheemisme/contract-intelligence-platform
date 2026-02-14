@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 class CreateAgentRequest(BaseModel):
     name: str = Field(..., description="The name of the agent to be created.")
+    selected_contract: str = Field(..., description="The selected contract for the agent.")
 
 class CallAgentRequest(BaseModel):
     agent_id: str = Field(..., description="The ID of the agent to call.")

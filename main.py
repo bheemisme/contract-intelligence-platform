@@ -56,6 +56,9 @@ def main():
 
     if os.environ.get("ENV") == "dev":
         reload = True
+        load_dotenv(dotenv_path=".env.dev")
+    else:
+        load_dotenv(dotenv_path=".env.prod")
 
     print("Hello from contract-intelligence-platform!")
 

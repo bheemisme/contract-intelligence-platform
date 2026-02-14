@@ -12,7 +12,7 @@ def fill_schema(contract_path: str, contract_cls: schemas.Contract.__class__) ->
 
     Throws
         ValueError: If the contract text is not in the expected format.
-        RuntimeError: If there is an error in the OpenAI API call.
+        RuntimeError: If there is an error in the Gemini API call.
     """
     
     with open(contract_path, "r", encoding="utf-8") as f:
