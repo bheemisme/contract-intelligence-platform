@@ -16,6 +16,9 @@ from google.cloud.firestore import (
     DocumentSnapshot,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def contruct_message(messages: Iterator[DocumentSnapshot]):
 
@@ -105,10 +108,10 @@ def add_messages(db: Client, agent_id: str, messages: list[AnyMessage]):
     msg_ref: CollectionReference = doc_ref.collection("messages")
 
     batch = db.batch()
-
     for msg in messages:
         doc_ref = msg_ref.document()
         msg_dict = msg.model_dump(mode="json")
+        msg_dict['additional_kwargs'].pop("__gemini_function_call_thought_signatures__", None)        
         batch.set(doc_ref, msg_dict)
 
     batch.commit()
