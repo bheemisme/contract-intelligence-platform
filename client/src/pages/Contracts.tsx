@@ -4,10 +4,9 @@ import ContractForm from '@/components/ContractForm';
 import type { ContractBase } from '@/contract-schemas';
 
 import { Button } from "flowbite-react";
-import { useEffect, useState, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from 'react-router';
 import { QueryClient } from '@tanstack/react-query';
-import type { FlagType } from '@/components/Flag';
 
 
 const Contracts = () => {
