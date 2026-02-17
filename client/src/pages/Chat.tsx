@@ -2,10 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import MessagesContainer from '@/components/MessagesContainer';
 import ChatInput from '@/components/ChatInput';
-import { useGetAgent, useCallAgent, useAddContractToAgent, useRenameAgent } from "@/queries/agents"
+import { useGetAgent, useCallAgent, useRenameAgent, useStreamAgent } from "@/queries/agents"
 import type { Message } from '@/agent-schemas';
 import { useQueryClient } from '@tanstack/react-query';
-import { getContractName } from '@/cache-queries';
+import { useGetContracts } from '@/queries/contracts';
+import type { ContractBase } from '@/contract-schemas';
+
+const getContractName = (contracts: ContractBase[] | undefined, contractId: string | undefined): string | undefined => {
+  if (!contractId) return "No contract selected";
+  if (!contracts) return "No contract selected";
+  const contract = contracts.find(contract => contract.contract_id === contractId);
+  return contract?.contract_name
+}
 
 const Chat: React.FC = () => {
 
@@ -13,35 +21,40 @@ const Chat: React.FC = () => {
   const { chatId: agentId } = useParams<{ chatId?: string }>();
   const navigate = useNavigate();
 
+  const { data: contracts, error: getContractsError } = useGetContracts();
+
+
+  if (getContractsError?.cause === 401) {
+    queryClient.clear()
+    navigate("/");
+    return null;
+  }
   useEffect(() => {
     if (!agentId) {
       navigate("/account")
+      return
     }
+    agent.refetch()
   }, [agentId])
 
 
   const agent = useGetAgent(agentId || "")
 
-  useEffect(() => {
-    if (agent.error) {
+  if (agent.error) {
 
-      // check if the error is a 401 error
-      if (agent.error.cause === 401) {
-        queryClient.clear()
-        navigate("/");
-      }
-
-      console.error("Error fetching agent:", agent.error);
-      navigate("/contracts");
+    // check if the error is a 401 error
+    if (agent.error.cause === 401) {
+      queryClient.clear()
+      navigate("/");
+      return null;
     }
 
+    console.error("Error fetching agent:", agent.error);
+    navigate("/contracts");
+    return null;
+  }
 
-  }, [agent.isError])
-
-  useEffect(() => {
-    agent.refetch();
-  }, [agentId])
-
+  const contractName = getContractName(contracts, agent.data?.selected_contract)
 
   // sort the messages by created_at timestamp in ascending order
   const sortedMessages = agent.data?.messages?.sort((a, b) => a.created_at - b.created_at) || [];
@@ -53,9 +66,9 @@ const Chat: React.FC = () => {
   }, [agentId])
 
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [streamingUpdate, setStreamingUpdate] = useState<string>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [selectedContract, setSelectedContract] = useState<string | null>(agent.data?.selected_contract || null);
 
 
   const scrollToBottom = () => {
@@ -67,28 +80,10 @@ const Chat: React.FC = () => {
   }, [messages]);
 
   const agentCall = useCallAgent()
-  const addContractToAgent = useAddContractToAgent(agentId || "")
 
   const handleSendMessage = async () => {
     // add selected contracts to the agent's selected_contract field in the backend
     if (!agentId) return;
-    if ((!agent.data?.selected_contract || !agent.data?.selected_contract.length) && selectedContract && selectedContract.length != 0) {
-      addContractToAgent.mutate({ agent_id: agentId, contract_id: selectedContract }, {
-        onSuccess: () => {
-          console.log("Contract added to agent successfully");
-          queryClient.refetchQueries({ queryKey: ["agent", agentId] });
-        },
-        onError: (error) => {
-          console.error("Error adding contract to agent:", error);
-
-          // check if error is 401
-          if (error.cause === 401) {
-            queryClient.clear();
-            navigate("/")
-          }
-        }
-      })
-    }
     if (!inputMessage.trim()) return;
 
     const userMessage: Message = {
@@ -99,13 +94,13 @@ const Chat: React.FC = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setIsTyping(true);
+    setIsGenerating(true);
 
 
     agentCall.mutate({ agentId: agentId, message: inputMessage }, {
       onSuccess: (response) => {
         setMessages(prev => [...prev, response]);
-        setIsTyping(false);
+        setIsGenerating(false);
       },
       onError: (error) => {
         console.error("Error calling agent:", error);
@@ -115,16 +110,24 @@ const Chat: React.FC = () => {
           queryClient.clear();
           navigate("/")
         }
-        setIsTyping(false);
+        setIsGenerating(false);
       }
     })
 
   };
 
+  const handleStreamMessage = async () => {
+    if (!agentId) return;
+    if (!inputMessage.trim()) return;
+
+    useStreamAgent(agentId, inputMessage, setInputMessage, setIsGenerating, setMessages, setStreamingUpdate)
+
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleStreamMessage();
     }
   };
 
@@ -170,26 +173,11 @@ const Chat: React.FC = () => {
           <button onClick={() => setIsRenaming(!isRenaming)} className='cursor-pointer'><svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.005 5.995h-1v2h1v8h-1v2h1c1.103 0 2-.897 2-2v-8c0-1.102-.898-2-2-2zm-14 4H15v4H6.005z" /><path d="M17.005 17.995V4H20V2h-8v2h3.005v1.995h-11c-1.103 0-2 .897-2 2v8c0 1.103.897 2 2 2h11V20H12v2h8v-2h-2.995v-2.005zm-13-2v-8h11v8h-11z" /></svg></button>
 
         </div>
-        <span className=' font-bold'>{getContractName(queryClient, agent.data?.selected_contract) || "No contract selected"}</span>
+        <span className=' font-bold'>{contractName || "No contract selected"}</span>
       </div>
 
 
-      <MessagesContainer messages={messages} />
-
-      {/* Typing Indicator */}
-      {isTyping && (
-        <div className="flex justify-start">
-          <div className="bg-white text-green-800 rounded-lg rounded-bl-none border border-green-200 px-4 py-2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className='py-2' ref={messagesEndRef} />
+      <MessagesContainer messages={messages} isGenerating={isGenerating} streamingUpdate={streamingUpdate}  ref={messagesEndRef} />
 
 
       {/* Input Area */}
@@ -198,9 +186,8 @@ const Chat: React.FC = () => {
         setInputMessage={setInputMessage}
         handleKeyPress={handleKeyPress}
         handleSendMessage={handleSendMessage}
-        isTyping={isTyping}
-        selectedContract={selectedContract}
-        setSelectedContract={setSelectedContract}
+        handleStreamMessage={handleStreamMessage}
+        isGenerating={isGenerating}
         agentId={agentId || ""}
       />
 

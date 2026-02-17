@@ -2,7 +2,7 @@ import logging
 import asyncio
 
 from typing import Annotated, Any, List
-from fastapi import APIRouter, Body, Depends, Response
+from fastapi import APIRouter, Body, Depends, Request, Response
 from fastapi.responses import StreamingResponse
 from langchain.messages import AIMessage, SystemMessage, ToolMessage, AnyMessage
 from api.schemas import CallAgentRequest, CreateAgentRequest, RenameAgentRequest
@@ -133,6 +133,7 @@ async def stream_agent(
     bucket: Annotated[Bucket, Depends(get_bucket)],
     session: Annotated[session_schemas.Session, Depends(validate_session)],
     response: Response,
+    request: Request,
     agent_id: str,
     message: str,
 ):
@@ -171,7 +172,7 @@ async def stream_agent(
         agent_utils.prepare_agent, db_client, bucket, agent_id, message
     )
 
-    streamer = agent_utils.stream_agent(db_client, agent_id, agent, history, messages)
+    streamer = agent_utils.stream_agent(db_client, request, agent_id, agent, history, messages)
 
     return StreamingResponse(streamer, media_type="text/event-stream")  # type: ignore
 
@@ -289,9 +290,7 @@ async def call_agent(
     Args:
         db_client: Firestore client.
         session: Session object.
-        agent_id: Agent ID.
-        message: Message to send to the agent.
-        selected_contracts: List of selected contract IDs.
+        req: CallAgentRequest object.
 
     Returns:
         Agent object.

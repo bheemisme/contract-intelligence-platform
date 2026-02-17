@@ -72,9 +72,8 @@ export const useGetUser = () => {
 export const logoutUser = async () => {
 
     const api_origin = import.meta.env.VITE_API_ORIGIN
-
+    
     try {
-
         const response = await fetch(`${api_origin}/user/logout`, {
             "method": "POST",
             "credentials": "include"

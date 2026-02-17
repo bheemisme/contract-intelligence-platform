@@ -3,10 +3,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 interface MessagesContainerProps {
-    messages: Message[]
+    messages: Message[];
+    isGenerating: boolean;
+    streamingUpdate?: string;
+    ref: React.RefObject<HTMLDivElement | null>;
 }
 
-const MessagesContainer: React.FC<MessagesContainerProps> = ({ messages }) => {
+const MessagesContainer: React.FC<MessagesContainerProps> = ({ messages, isGenerating, streamingUpdate, ref }) => {
     // filter out system and tool messages
     messages = messages.filter(message => message.type === 'human' || message.type === 'ai');
 
@@ -33,6 +36,13 @@ const MessagesContainer: React.FC<MessagesContainerProps> = ({ messages }) => {
                     </div>
                 </div>
             ))}
+            {
+                isGenerating && streamingUpdate && (
+                    <div className='bg-white text-green-800 px-2 py-1'>{streamingUpdate}</div>
+                )
+            }
+          <div className='py-2' ref={ref}></div>
+
         </div>
     )
 }

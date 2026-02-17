@@ -146,7 +146,7 @@ export const useCallAgent = () => {
         mutationKey: ["agent", "call_agent"],
         mutationFn: async (params: CallAgentParams) => {
             const api_origin = import.meta.env.VITE_API_ORIGIN;
-        
+
             const response = await fetch(`${api_origin}/agent`, {
                 method: "PUT",
                 credentials: "include",
@@ -187,7 +187,7 @@ export const useAddContractToAgent = (agentId: string) => {
                     "Content-Type": "application/json"
                 },
             });
-            
+
             if (!response.ok) {
                 throw new Error("Failed to add contract to agent");
             }
@@ -199,7 +199,7 @@ export const useAddContractToAgent = (agentId: string) => {
                 });
             }
         },
-       
+
     })
 }
 
@@ -220,7 +220,7 @@ export const useRenameAgent = (agentId: string) => {
             if (!response.ok) {
                 throw new Error("Failed to rename agent");
             }
-           
+
             // check for 401 http error
             if (response.status === 401) {
                 throw new Error("Unauthorized", {
@@ -229,4 +229,89 @@ export const useRenameAgent = (agentId: string) => {
             }
         }
     })
+}
+
+export const useStreamAgent = (
+    agentId: string, inputMessage: string,
+    setInputMessage: React.Dispatch<React.SetStateAction<string>>,
+    setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>,
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
+    setStreamingUpdate: React.Dispatch<React.SetStateAction<string | undefined>>
+) => {
+
+    const userMessage: Message = {
+        content: inputMessage,
+        type: 'human',
+        created_at: Date.now() / 1000, // adding this only for type purposes, the backend will set the actual timestamp
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsGenerating(true);
+    setStreamingUpdate("generating response");
+
+    const eventSource = new EventSource(`${import.meta.env.VITE_API_ORIGIN}/agent/stream?agent_id=${agentId}&message=${encodeURIComponent(inputMessage)}`, {
+        "withCredentials": true
+    });
+
+    let assistantMessage: Message = {
+        content: '',
+        type: 'ai',
+        created_at: Date.now() / 1000,
+    };
+
+    eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (data.type === 'done') {
+            eventSource.close();
+            setIsGenerating(false);
+            return;
+        }
+
+        if (data.type == "tool_call") {
+            setStreamingUpdate("calling tool")
+            return;
+        }
+
+        if (data.type == "tool_response") {
+            setStreamingUpdate("generating content")
+            return;
+        }
+
+
+        if (data.type == "ai_response") {
+            setIsGenerating(false)
+            assistantMessage.content += data.content;
+            setStreamingUpdate(undefined)
+
+            setMessages(prev => {
+
+                if (prev[prev.length - 1].type == "ai") {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = assistantMessage;
+                    return newMessages;
+                }
+                return [...prev, assistantMessage]
+
+            })
+            return;
+        }
+
+        if (data.type == "done") {
+            eventSource.close();
+            setIsGenerating(false);
+        }
+
+
+
+
+    };
+
+    eventSource.onerror = (error) => {
+        console.error('EventSource failed:', error);
+        eventSource.close();
+        setIsGenerating(false);
+    };
+
+
 }

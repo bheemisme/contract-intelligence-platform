@@ -1,13 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
 
-import Home from './pages/Home';
-import Contracts from './pages/Contracts';
-import Chat from './pages/Chat';
-import Account from './pages/Account';
-import Navigation from './components/Navigation';
-import { useGetUser } from './queries/user';
-import Callback from './pages/Callback';
-import ContractDetail from './pages/ContractDetail';
+import Home from '@/pages/Home';
+import Contracts from '@/pages/Contracts';
+import Chat from '@/pages/Chat';
+import Account from '@/pages/Account';
+import Navigation from '@/components/Navigation';
+import { useGetUser } from '@/queries/user';
+import Callback from '@/pages/Callback';
+import ContractDetail from '@/pages/ContractDetail';
 
 import { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";

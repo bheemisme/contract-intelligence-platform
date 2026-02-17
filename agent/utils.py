@@ -1,8 +1,9 @@
 import logging
 import asyncio
-
+import json
 from time import sleep
 
+from fastapi import Request
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from langchain.messages import (
@@ -148,6 +149,7 @@ async def call_agent(
 
 async def stream_agent(
     db_client: Client,
+    request: Request,
     agent_id: str,
     agent: CompiledStateGraph,
     history: List[AnyMessage],
@@ -167,56 +169,82 @@ async def stream_agent(
         A generator that yields the response messages from the agent.
     """
     # stream the response
-    logger.debug(f"calling agent with ID: {agent_id}")
+    logger.debug(f"streaming agent with ID: {agent_id}")
 
     try:
         agent_response = agent.astream(input={"messages": history + messages})
         chunks: List[AnyMessage] = [messages[0]]
 
         async for chunk in agent_response:
+            if await request.is_disconnected():
+                logger.info("Client disconnected")
+                break
             key = next(iter(chunk))
             msg = chunk[key]["messages"][0]
-            content = msg.content
+            
             msg.additional_kwargs["created_at"] = datetime.now(timezone.utc).timestamp()
             await asyncio.sleep(1)
             if isinstance(msg, AIMessage):
                 # check if msg has tool calls
                 if len(msg.tool_calls) > 0:
                     chunks.append(msg)
-                    yield f"tool_call: {msg.tool_calls[0]['name']}"
+                    yield f"data: {json.dumps(
+                        {"type": "tool_call", "content": msg.tool_calls[0]["name"]}
+                    )}\n\n"
+                    await asyncio.sleep(0.5)
+
                 elif isinstance(msg.content, list):
                     # possibility to break here, since it is depends on the format of the llm's output
-                    msg.content = msg.content[0]["text"] + msg.content[1]  # type: ignore
-                    chunks.append(msg)
+                    new_msg = ""
                     
+                    
+                    if len(msg.content) > 0:
+                        if isinstance(msg.content[0], dict) and "text" in msg.content[0]:
+                            new_msg = msg.content[0]["text"]  # type: ignore
+                        elif isinstance(msg.content[0], str):
+                            new_msg = msg.content[0]
+                        if len(msg.content) > 1 and isinstance(msg.content[1], str):
+                            new_msg += msg.content[1]
+                    
+                    msg.content = new_msg
+                    chunks.append(msg)
+
                     # send 100 chars at once
                     for i in range(0, len(msg.content), 100):
-                        yield f"ai_response: {msg.content[i:i+100]}"
-                        await asyncio.sleep(0.1)
-                        
+
+                        yield f"data: {json.dumps(
+                            {"type": "ai_response", "content": msg.content[i : i + 100]}
+                        )}\n\n"
+                        await asyncio.sleep(0.5)
+
                     # yield f"ai_response: {msg.content}"
                 else:
                     chunks.append(msg)
                     # send 100 chars at once
                     for i in range(0, len(msg.content), 100):
-                        yield f"ai_response: {msg.content[i:i+100]}"
-                        await asyncio.sleep(0.1)
+                        yield f"data:{json.dumps(
+                            {"type": "ai_response", "content": msg.content[i : i + 100]}
+                        )}\n\n"
+                        await asyncio.sleep(0.5)
                     # yield f"ai_response: {msg.content}"
             elif isinstance(msg, ToolMessage):
-                
+
                 chunks.append(msg)
-                yield f"tool_response: {content}"
-        
-        
+                yield f"data: {json.dumps(
+                    {"type": "tool_response", "content": ""}
+                )}\n\n"
+                await asyncio.sleep(0.5)
+
         logger.debug(f"completed streaming agent response for agent_id: {agent_id}")
-        
+
         # save the messages to the database
         await asyncio.to_thread(
             agent_dal.add_messages, db_client, agent_id, messages=chunks
         )
-        
+
         logger.debug(f"saved messages to database for agent_id: {agent_id}")
-        yield "done"
+        yield f"data: {json.dumps({"type": "done", "content": ""})}\n\n"
+        
 
     except ResourceExhausted as exc:
         logging.error(
@@ -224,9 +252,7 @@ async def stream_agent(
             agent_id,
             exc_info=exc,
         )
-        raise RuntimeError(
-            "Agent is currently rate limited. Please wait a moment before retrying."
-        ) from exc
+        yield f"data: {json.dumps({"type": "error", "content": "Rate limit exceeded. Please try again later."})}\n\n"
     except InvalidArgument as exc:
         if "context" in str(exc).lower():
             logging.error(
@@ -234,15 +260,12 @@ async def stream_agent(
                 agent_id,
                 exc_info=exc,
             )
-            raise RuntimeError(
-                "Agent context window exceeded. Consider reducing the size of the contract or history."
-            ) from exc
-        raise
+            
+        yield f"data: {json.dumps({"type": "error", "content": "Context overflow. Please try again with a shorter message."})}\n\n"
     except Exception as exc:
         logging.error(
             "Agent invoke failed for agent_id=%s",
             agent_id,
             exc_info=exc,
         )
-        raise RuntimeError("Agent invoke failed. Please try again.") from exc
-    
+        yield f"data: {json.dumps({"type": "error", "content": "An error occurred. Please try again."})}\n\n"

@@ -84,8 +84,10 @@ def get_agent_document(db: Client, agent_id: str) -> Agent:
     # sort messages by created_at timestamp
     messages.sort(key=lambda x: x.additional_kwargs["created_at"])  # type: ignore
 
+    # remove ToolMessages and ToolCalls
+    messages = [message for message in messages if message.type != 'tool' or (message.type == 'ai' and len(message.tool_calls) > 0)]
     agent = Agent(**doc.to_dict())  # type: ignore
-    agent.messages = messages  
+    agent.messages = messages
     return agent
 
 
