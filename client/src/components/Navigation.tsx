@@ -1,18 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate, type NavigateFunction } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useDeleteAgent, useGetAllAgents } from "@/queries/agents"
 import AgentForm from "./AgentForm";
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import type { Agent } from '@/agent-schemas';
 
-const buildChatSubItems = (navigate: NavigateFunction) => {
-  const agents = useGetAllAgents()
-  const queryClient = useQueryClient()
+const buildChatSubItems = (agents: UseQueryResult<Agent[], Error>) => {
 
-  if (agents.error?.cause === 401) {
-    queryClient.clear()
-    sessionStorage.setItem('isJustLoggedOut', 'true')
-    navigate('/')
-  }
   return agents.data?.map((val) => ({
     path: `/chat/${val.agent_id}`,
     label: val.name,
@@ -44,7 +38,7 @@ interface MobileNavItemListProps {
   closeMobileMenu: () => void;
   isAgentFormOpen: boolean;
   setIsAgentFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
 }
 
 const DesktopNavItemsList: React.FC<DesktopNavItemsListProps> = (props) => {
@@ -189,12 +183,12 @@ const MobileNavItemList: React.FC<MobileNavItemListProps> = (props) => {
                       <button className='cursor-pointer' onClick={() => {
                         deleteAgent.mutate(subItem.agent_id, {
                           onSuccess: () => {
-                            queryClient.refetchQueries({queryKey: ['agents']})
+                            queryClient.refetchQueries({ queryKey: ['agents'] })
                           }
                         })
                       }}><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 30 30">
-                        <path d="M 13 3 A 1.0001 1.0001 0 0 0 11.986328 4 L 6 4 A 1.0001 1.0001 0 1 0 6 6 L 24 6 A 1.0001 1.0001 0 1 0 24 4 L 18.013672 4 A 1.0001 1.0001 0 0 0 17 3 L 13 3 z M 6 8 L 6 24 C 6 25.105 6.895 26 8 26 L 22 26 C 23.105 26 24 25.105 24 24 L 24 8 L 6 8 z"></path>
-                      </svg></button>
+                          <path d="M 13 3 A 1.0001 1.0001 0 0 0 11.986328 4 L 6 4 A 1.0001 1.0001 0 1 0 6 6 L 24 6 A 1.0001 1.0001 0 1 0 24 4 L 18.013672 4 A 1.0001 1.0001 0 0 0 17 3 L 13 3 z M 6 8 L 6 24 C 6 25.105 6.895 26 8 26 L 22 26 C 23.105 26 24 25.105 24 24 L 24 8 L 6 8 z"></path>
+                        </svg></button>
                     </div>
                   ))}
                 </div>
@@ -224,11 +218,33 @@ const MobileNavItemList: React.FC<MobileNavItemListProps> = (props) => {
 const Navigation: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate()
+  const agents = useGetAllAgents()
+  const queryClient = useQueryClient()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChatSubmenuOpen, setIsChatSubmenuOpen] = useState(false);
 
-  const chats = buildChatSubItems(navigate);
+  const [chats, setChats] = useState<{
+    path: string,
+    label: string,
+    icon: string,
+    agent_id: string
+  }[]>([])
+
+  useEffect(() => {
+    if (agents.error?.cause === 401) {
+      queryClient.clear()
+      navigate('/')
+      return
+    }
+  }, [agents.isError])
+
+  useEffect(() => {
+    setChats(buildChatSubItems(agents))
+  }, [agents.data])
+
+
+
   const items = navItems(chats);
 
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false);
@@ -238,13 +254,14 @@ const Navigation: React.FC = () => {
 
 
   return (
-    <>
+    <div>
+      {isAgentFormOpen && <AgentForm className="fixed top-0 left-1/2 transform translate-y-full duration-5000 transition-transform" setIsAgentFormOpen={setIsAgentFormOpen} />}
       {/* Desktop Sidebar */}
       <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:bg-green-800 md:text-white">
         <div className="flex items-center justify-center h-16 bg-green-900">
           <h1 className="text-xl font-bold">CIP</h1>
         </div>
-        {isAgentFormOpen && <AgentForm className="top-1/2 left-1/2 transform -translate-y-1/2 duration-1000" setIsAgentFormOpen={setIsAgentFormOpen} />}
+
         <DesktopNavItemsList
           items={items}
           location={location}
@@ -258,7 +275,6 @@ const Navigation: React.FC = () => {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-green-800 text-white z-50">
-        {isAgentFormOpen && <AgentForm className=" left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2" setIsAgentFormOpen={setIsAgentFormOpen} />}
 
         <div className="flex items-center justify-between h-16 px-4">
           <h1 className="text-xl font-bold">CIP</h1>
@@ -303,7 +319,7 @@ const Navigation: React.FC = () => {
 
       {/* Mobile Spacer */}
       <div className="md:hidden h-16"></div>
-    </>
+    </div>
   );
 };
 

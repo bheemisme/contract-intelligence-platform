@@ -16,11 +16,10 @@ const ContractInfo: React.FC<ContractInfoProps> = ({ contract }) => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const fillContract = useFillContract(contract.contract_id);
-
     useEffect(() => {
         if (fillContract.error?.cause === 401) {
             queryClient.clear()
-            sessionStorage.setItem('isJustLoggedOut', 'true')
+
             navigate("/");
         }
     }, [fillContract.error])
@@ -91,7 +90,7 @@ const ContractInfo: React.FC<ContractInfoProps> = ({ contract }) => {
             </div>
 
 
-            
+
 
         </>
     )

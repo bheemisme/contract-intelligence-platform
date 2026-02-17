@@ -68,23 +68,25 @@ export const useGetAllAgents = () => {
     });
 };
 
+interface CreateAgentDTO {
+    name: string;
+    selected_contract: string;
+}
+
 export const useCreateAgent = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationKey: ["agent", "create"],
-        mutationFn: async (name: string) => {
-            const trimmedName = name.trim();
-            if (!trimmedName) {
-                throw new Error("Agent name is required");
-            }
-
+        mutationFn: async (createAgentDTO: CreateAgentDTO) => {
+            const trimmedName = createAgentDTO.name.trim();
+            const trimmedContract = createAgentDTO.selected_contract.trim();
             const api_origin = import.meta.env.VITE_API_ORIGIN;
 
             const response = await fetch(`${api_origin}/agent`, {
                 method: "POST",
                 credentials: "include",
-                body: JSON.stringify({ "name": trimmedName }),
+                body: JSON.stringify({ "name": trimmedName, selected_contract: trimmedContract }),
                 headers: {
                     "Content-Type": "application/json"
                 }

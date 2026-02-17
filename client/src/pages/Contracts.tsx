@@ -4,9 +4,11 @@ import ContractForm from '@/components/ContractForm';
 import type { ContractBase } from '@/contract-schemas';
 
 import { Button } from "flowbite-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SetStateAction } from "react";
 import { useNavigate } from 'react-router';
 import { QueryClient } from '@tanstack/react-query';
+import type { FlagType } from '@/components/Flag';
+
 
 const Contracts = () => {
 
@@ -19,8 +21,6 @@ const Contracts = () => {
   useEffect(() => {
     if (error?.cause === 401) {
       queryClient.clear()
-      // set session varaiable
-      sessionStorage.setItem('isJustLoggedOut', 'true')
       navigate('/')
     }
   }, [error])

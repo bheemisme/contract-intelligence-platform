@@ -1,44 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import GoogleButton from '@/components/GoogleButton';
-import Flag from '@/components/Flag';
-import type { FlagType } from '@/components/Flag'
 
 const Home: React.FC = () => {
-
-  const [showFlag, setShowFlag] = useState(false)
-  const [flagMessage, setFlagMessage] = useState("")
-  const [flagType, setFlagType] = useState<FlagType>("info")
-
-  useEffect(() => {
-    // get session variable
-    const isJustLoggedOut = sessionStorage.getItem('isJustLoggedOut')
-    if (isJustLoggedOut) {
-      setShowFlag(true)
-      setFlagMessage("Successfully Logged Out")
-      setFlagType("success")
-    }
-    sessionStorage.removeItem('isJustLoggedOut')
-
-
-    const isSignInError = sessionStorage.getItem('isSignInError')
-    if (isSignInError) {
-      setShowFlag(true)
-      setFlagMessage("Error signing in")
-      setFlagType("error")
-    }
-
-    sessionStorage.removeItem('isSignInError')
-
-
-  }, [])
-
 
 
   return (
     <div className="min-h-screen bg-linear-to-br from-green-50 to-green-100">
       {/* Navigation Bar - Public */}
-
-      {showFlag && <Flag message={flagMessage} setShowFlag={setShowFlag} flag={flagType} />}
 
       <nav className="bg-white shadow-sm border-b border-green-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -15,7 +15,6 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 import { useEffect, useState } from 'react';
 
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -42,7 +41,7 @@ const LoadingIndicator: React.FC<{ message?: string }> = ({ message = 'Verifying
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { error, data: user } = useGetUser()
-  
+
   const [state, setState] = useState<"loading" | "ready">("loading");
   useEffect(() => {
     if (user || error) {
@@ -64,10 +63,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 
 
-
-
-
 function App() {
+
 
   return (
     <PersistQueryClientProvider
@@ -77,6 +74,7 @@ function App() {
         initialIsOpen={false}
         position="bottom"
       />
+      {/* <Flag message={flagCtx.flagMessage} flag={flagCtx.flagType} setShowFlag={flagCtx.setShowFlag} showFlag={flagCtx.showFlag} hideFlag={flagCtx.hideFlag} setHideFlag={flagCtx.setHideFlag} /> */}
       <Router>
         <Routes>
           {/* Public Home page */}

@@ -26,13 +26,11 @@ const ContractDetail: React.FC = () => {
     useEffect(() => {
         if (error?.cause === 401) {
             queryClient.clear()
-            sessionStorage.setItem('isJustLoggedOut', 'true')
             navigate('/')
         }
 
         if(getContractUnvalQuery.error?.cause === 401) {
             queryClient.clear()
-            sessionStorage.setItem('isJustLoggedOut', 'true')
             navigate('/')
         }
     }, [error, getContractUnvalQuery.error])

@@ -28,7 +28,6 @@ const Chat: React.FC = () => {
       // check if the error is a 401 error
       if (agent.error.cause === 401) {
         queryClient.clear()
-        sessionStorage.setItem('isJustLoggedOut', 'true')
         navigate("/");
       }
 
@@ -85,7 +84,6 @@ const Chat: React.FC = () => {
           // check if error is 401
           if (error.cause === 401) {
             queryClient.clear();
-            sessionStorage.setItem('isJustLoggedOut', 'true')
             navigate("/")
           }
         }
@@ -115,7 +113,6 @@ const Chat: React.FC = () => {
         // check if error is 401
         if (error.cause === 401) {
           queryClient.clear();
-          sessionStorage.setItem('isJustLoggedOut', 'true')
           navigate("/")
         }
         setIsTyping(false);
@@ -147,7 +144,6 @@ const Chat: React.FC = () => {
         // check if error is 401
         if (error.cause === 401) {
           queryClient.clear();
-          sessionStorage.setItem('isJustLoggedOut', 'true')
           navigate("/")
         }
       },
