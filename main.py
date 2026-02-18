@@ -50,7 +50,6 @@ app.include_router(contract_router.router)
 app.include_router(user_router.router)
 app.include_router(agent_router.router)
 
-
 def main():
 
     reload = False
