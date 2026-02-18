@@ -150,7 +150,6 @@ async def stream_agent(
     Returns:
         Agent object.
     """
-    response.headers["Cache-Control"] = "no-store"
     logger.debug(f"streaming agent with ID: {agent_id} for user: {session.user_id}")
 
     agent_doc = await asyncio.to_thread(
@@ -173,8 +172,14 @@ async def stream_agent(
     )
 
     streamer = agent_utils.stream_agent(db_client, request, agent_id, agent, history, messages)
-
-    return StreamingResponse(streamer, media_type="text/event-stream")  # type: ignore
+    
+    headers = {
+        "Cache-Control": "no-cache, no-transform",
+        "Content-Type": "text/event-stream",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    }
+    return StreamingResponse(streamer, headers=headers)  # type: ignore
 
 
 @router.get("/{agent_id}")
