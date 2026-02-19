@@ -38,6 +38,9 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Who am I?
+        run: gcloud auth list
+
       - name: Deploy to App Engine
         run: |
           gcloud app deploy app.yaml --verbosity=debug
