@@ -16,7 +16,7 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider:
+          workload_identity_provider: ${{secrets.WIF_PROVIDER}}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Setup gcloud
