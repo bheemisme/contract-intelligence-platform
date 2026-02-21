@@ -1,0 +1,46 @@
+name: Deploy Client to App Engine
+
+on:
+    push:
+        branches:
+            - master
+        paths:
+            - "client/**"
+
+permissions:
+    contents: read
+    id-token: write
+
+jobs:
+    deploy-client:
+        runs-on: ubuntu-latest
+        environment: client
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Authenticate to GCP
+              uses: google-github-actions/auth@v2
+              with:
+                  workload_identity_provider: ${{secrets.WIF_PROVIDER}}
+                  service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+            - name: Setup gcloud
+              uses: google-github-actions/setup-gcloud@v2
+              with:
+                  project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+            - name: Deploy to App Engine
+              env:
+                  VITE_API_ORIGIN: ${{ vars.VITE_API_ORIGIN }}
+                  VITE_GOOGLE_AUTH_REDIRECT_URI: ${{ vars.VITE_GOOGLE_AUTH_REDIRECT_URI }}
+                  VITE_GOOGLE_CLOUD_BUCKET: ${{ vars.VITE_GOOGLE_CLOUD_BUCKET }}
+                  VITE_GOOGLE_AUTH_CLIENT_ID: ${{ vars.VITE_GOOGLE_AUTH_CLIENT_ID }}
+                  VITE_GOOGLE_CLIENT_SECRET: ${{ vars.VITE_GOOGLE_CLIENT_SECRET }}
+
+              run: |
+                  cd client
+                  pnpm install
+                  pnpm build
+                  gcloud app deploy app.yaml --verbosity=debug

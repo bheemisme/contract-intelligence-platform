@@ -5,18 +5,18 @@ auth {
 auth:oauth2 {
   grant_type: authorization_code
   callback_url: http://localhost:5173/callback
-  authorization_url: {{GOOGLE_AUTH_URI}}
-  access_token_url: {{GOOGLE_AUTH_TOKEN_URI}}
-  refresh_token_url: 
+  authorization_url: https://accounts.google.com/o/oauth2/auth?access_type=offline&prompt=consent
+  access_token_url: https://oauth2.googleapis.com/token
+  refresh_token_url:  https://oauth2.googleapis.com/token
   client_id: {{GOOGLE_AUTH_CLIENT_ID}}
   client_secret: {{GOOGLE_AUTH_CLIENT_SECRET}}
-  scope: openid email profile
-  state: 3979832749
+  scope: openid profile email
+  state: 34
   pkce: true
   credentials_placement: body
   credentials_id: credentials
   token_placement: header
   token_header_prefix: Bearer
   auto_fetch_token: true
-  auto_refresh_token: false
+  auto_refresh_token: true
 }

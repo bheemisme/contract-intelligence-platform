@@ -4,13 +4,15 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - "client/**"
 
 permissions:
   contents: read
   id-token: write
-  
+
 jobs:
-  deploy:
+  deploy-api:
     runs-on: ubuntu-latest
 
     steps:
