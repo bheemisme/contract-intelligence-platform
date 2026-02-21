@@ -41,6 +41,7 @@ jobs:
 
               run: |
                   cd client
+                  npm install -g pnpm
                   pnpm install
                   pnpm build
                   gcloud app deploy app.yaml --verbosity=debug
