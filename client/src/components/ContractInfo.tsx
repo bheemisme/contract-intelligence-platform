@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import type { Contract, ContractBase } from "../contract-schemas";
-import { useFillContract, useGetContract } from "../queries/contracts";
+import { useFillContract } from "../queries/contracts";
 import { useEffect, useState } from "react";
 import { renderValue } from "../components/utils";
 import { useQueryClient } from "@tanstack/react-query";
