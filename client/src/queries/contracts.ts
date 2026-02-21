@@ -3,6 +3,7 @@ import type { ContractBase, ContractFormSchema, Contract, ValidationReport } fro
 
 
 export const useGetContracts = () => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useQuery({
     queryKey: ['contracts'],
     queryFn: async () => {
@@ -10,7 +11,10 @@ export const useGetContracts = () => {
 
       const response = await fetch(`${api_origin}/contract/get_all`, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+           "X-CSRF-TOKEN": csrf_token || "",
+        }
       })
 
       if (response.ok) {
@@ -35,6 +39,7 @@ export const useGetContracts = () => {
 };
 
 export const useUploadContract = () => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useMutation({
     mutationFn: async (contractForm: ContractFormSchema) => {
 
@@ -53,6 +58,9 @@ export const useUploadContract = () => {
         method: 'POST',
         body: formData,
         credentials: "include",
+        headers: {
+           "X-CSRF-TOKEN": csrf_token || "",
+        }
       })
 
       if (!response.ok) {
@@ -73,6 +81,7 @@ export const useUploadContract = () => {
 }
 
 export const useGetContractWithoutValidation = (contractId: string) => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useQuery({
     queryKey: ['contract', contractId],
     queryFn: async () => {
@@ -83,6 +92,9 @@ export const useGetContractWithoutValidation = (contractId: string) => {
       const response = await fetch(`${api_origin}/contract/get_unval/${contractId}`, {
         method: 'GET',
         credentials: 'include',
+        headers: {
+           "X-CSRF-TOKEN": csrf_token || "",
+        }
       })
       if (!response.ok) {
         throw new Error('Failed to fetch contract details');
@@ -102,6 +114,7 @@ export const useGetContractWithoutValidation = (contractId: string) => {
 }
 
 export const useGetContract = (contractId: string | null) => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useQuery({
     queryKey: ['contract', contractId],
     queryFn: async () => {
@@ -109,6 +122,9 @@ export const useGetContract = (contractId: string | null) => {
       const response = await fetch(`${api_origin}/contract/get/${contractId}`, {
         method: 'GET',
         credentials: 'include',
+        headers: {
+           "X-CSRF-TOKEN": csrf_token || "",
+        }
       })
       if (!response.ok) {
         throw new Error('Failed to fetch contract details');
@@ -129,6 +145,7 @@ export const useGetContract = (contractId: string | null) => {
 }
 
 export const useFillContract = (contractId: string) => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useMutation({
     mutationKey: ["contract", contractId],
     mutationFn: async (contractId: string) => {
@@ -138,6 +155,7 @@ export const useFillContract = (contractId: string) => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          "X-CSRF-TOKEN": csrf_token || "",
         },
         body: JSON.stringify({ "contract_id": contractId })
       })
@@ -161,6 +179,7 @@ export const useFillContract = (contractId: string) => {
 
 
 export const useValidateContract = (contractId: string) => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useMutation({
     mutationKey: ['contract', "validation", contractId],
     mutationFn: async () => {
@@ -170,6 +189,7 @@ export const useValidateContract = (contractId: string) => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          "X-CSRF-TOKEN": csrf_token || "",
         },
         body: JSON.stringify({ "contract_id": contractId })
       })
@@ -192,6 +212,7 @@ export const useValidateContract = (contractId: string) => {
 }
 
 export const useGetValidationReport = (contractId: string) => {
+  const csrf_token = localStorage.getItem("csrf_token")
   return useQuery({
     queryKey: ['contract', "validation", contractId],
     queryFn: async () => {
@@ -199,6 +220,9 @@ export const useGetValidationReport = (contractId: string) => {
       const response = await fetch(`${api_origin}/contract/validate/${contractId}`, {
         method: 'GET',
         credentials: 'include',
+        headers: {
+          "X-CSRF-TOKEN": csrf_token || "",
+        },
       })
 
       if (!response.ok) {

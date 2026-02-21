@@ -49,9 +49,17 @@ def verify_google_id_token(token: str, client_id: str):
     }
     return profile
 
+# get X-CSRF-Token from headers
+def get_csrf_token(request: Request) -> str:
+    csrf_token = request.headers.get("X-CSRF-Token")
+    if not csrf_token:
+        raise HTTPException(status_code=400, detail="CSRF token is missing")
+    return csrf_token
 
 async def validate_session(db_client: firestore.Client = Depends(get_firestore), 
-                           session_id: Optional[str] = Cookie(None, alias="session_id")) -> Session:
+                           session_id: Optional[str] = Cookie(None, alias="session_id"),
+                           csrf_token: Optional[str] = Depends(get_csrf_token)
+                           ) -> Session:
     """
     Validates the session ID and returns the user ID if the session is active.
 
@@ -74,10 +82,13 @@ async def validate_session(db_client: firestore.Client = Depends(get_firestore),
     logger.debug(f"Validating session: {session_id}")
 
     if not session:
-        raise HTTPException(status_code=401, detail="unauthorized")
+        raise HTTPException(status_code=401, detail="unauthorized, session not found")
 
     if session.expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=401, detail="unauthorized")
+        raise HTTPException(status_code=401, detail="unauthorized, session expired")
+    
+    if session.csrf_token != csrf_token:
+        raise HTTPException(status_code=401, detail="unauthorized, csrf token mismatch")
 
     return session
 

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Agent, Message, CallAgentParams, AddContractToAgentParams } from "@/agent-schemas";
-
+import { EventSourcePolyfill} from "event-source-polyfill"
 export const useGetAgent = (agent_id: string) => {
+    // fetch csrf token
+    const csrf_token = localStorage.getItem("csrf_token")
     return useQuery({
         queryKey: ["agent", agent_id],
         queryFn: async () => {
@@ -9,6 +11,9 @@ export const useGetAgent = (agent_id: string) => {
             const response = await fetch(`${api_origin}/agent/${agent_id}`, {
                 method: "GET",
                 credentials: "include",
+                headers: {
+                    "X-CSRF-TOKEN": csrf_token || "",
+                }
             });
 
             if (!response.ok) {
@@ -35,6 +40,7 @@ export const useGetAgent = (agent_id: string) => {
 };
 
 export const useGetAllAgents = () => {
+    const csrf_token = localStorage.getItem("csrf_token")
     return useQuery({
         queryKey: ["agents"],
         queryFn: async () => {
@@ -42,6 +48,9 @@ export const useGetAllAgents = () => {
             const response = await fetch(`${api_origin}/agent/get_all`, {
                 method: "GET",
                 credentials: "include",
+                headers: {
+                    "X-CSRF-TOKEN": csrf_token || "",
+                }
             });
 
             if (!response.ok) {
@@ -75,6 +84,7 @@ interface CreateAgentDTO {
 
 export const useCreateAgent = () => {
     const queryClient = useQueryClient();
+    const csrf_token = localStorage.getItem("csrf_token")
 
     return useMutation({
         mutationKey: ["agent", "create"],
@@ -88,7 +98,8 @@ export const useCreateAgent = () => {
                 credentials: "include",
                 body: JSON.stringify({ "name": trimmedName, selected_contract: trimmedContract }),
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrf_token || "",
                 }
             });
 
@@ -113,6 +124,7 @@ export const useCreateAgent = () => {
 };
 
 export const useDeleteAgent = () => {
+    const csrf_token = localStorage.getItem("csrf_token")
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -122,6 +134,9 @@ export const useDeleteAgent = () => {
             const response = await fetch(`${api_origin}/agent/${agent_id}`, {
                 method: "DELETE",
                 credentials: "include",
+                headers: {
+                    "X-CSRF-TOKEN": csrf_token || "",
+                }
             });
 
             if (!response.ok) {
@@ -142,6 +157,7 @@ export const useDeleteAgent = () => {
 };
 
 export const useCallAgent = () => {
+    const csrf_token = localStorage.getItem("csrf_token")
     return useMutation({
         mutationKey: ["agent", "call_agent"],
         mutationFn: async (params: CallAgentParams) => {
@@ -152,7 +168,8 @@ export const useCallAgent = () => {
                 credentials: "include",
                 body: JSON.stringify({ agent_id: params.agentId, message: params.message }),
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrf_token || "",
                 },
             });
 
@@ -175,6 +192,7 @@ export const useCallAgent = () => {
 
 
 export const useAddContractToAgent = (agentId: string) => {
+    const csrf_token = localStorage.getItem("csrf_token")
     return useMutation({
         mutationKey: ["agent", agentId, "add_contract"],
         mutationFn: async ({ contract_id }: AddContractToAgentParams) => {
@@ -184,7 +202,8 @@ export const useAddContractToAgent = (agentId: string) => {
                 credentials: "include",
                 body: JSON.stringify({ agent_id: agentId, contract_id }),
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrf_token || ""
                 },
             });
 
@@ -204,6 +223,7 @@ export const useAddContractToAgent = (agentId: string) => {
 }
 
 export const useRenameAgent = (agentId: string) => {
+    const csrf_token = localStorage.getItem("csrf_token")
     return useMutation({
         mutationKey: ["agent", agentId],
         mutationFn: async ({ new_name }: { new_name: string }) => {
@@ -213,7 +233,8 @@ export const useRenameAgent = (agentId: string) => {
                 credentials: "include",
                 body: JSON.stringify({ agent_id: agentId, new_name }),
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrf_token || ""
                 },
             });
 
@@ -231,7 +252,7 @@ export const useRenameAgent = (agentId: string) => {
     })
 }
 
-export const useStreamAgent = (
+export const useStreamAgent = async (
     agentId: string, inputMessage: string,
     setInputMessage: React.Dispatch<React.SetStateAction<string>>,
     setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>,
@@ -250,8 +271,14 @@ export const useStreamAgent = (
     setIsGenerating(true);
     setStreamingUpdate("generating response");
 
-    const eventSource = new EventSource(`${import.meta.env.VITE_API_ORIGIN}/agent/stream?agent_id=${agentId}&message=${encodeURIComponent(inputMessage)}`, {
-        "withCredentials": true
+    const url = `${import.meta.env.VITE_API_ORIGIN}/agent/stream?agent_id=${agentId}&message=${encodeURIComponent(inputMessage)}`
+
+
+    const eventSource = new EventSourcePolyfill(url, {
+        "withCredentials": true,
+        headers: {
+            "X-CSRF-TOKEN": localStorage.getItem("csrf_token") || ""
+        }
     });
 
     let assistantMessage: Message = {
@@ -301,8 +328,6 @@ export const useStreamAgent = (
             eventSource.close();
             setIsGenerating(false);
         }
-
-
 
 
     };

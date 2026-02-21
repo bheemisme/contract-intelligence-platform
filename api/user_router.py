@@ -10,7 +10,7 @@ from api.utils import (
     verify_google_id_token,
 )
 from user import dal as user_dal, schemas as user_schemas
-from sessions import dal as session_dal, schemas as session_schemas
+from sessions import dal as session_dal, schemas as session_schemas, utils as session_utils
 from datetime import datetime, timedelta, timezone
 from google.cloud import firestore
 
@@ -26,9 +26,14 @@ router = APIRouter(prefix="/user")
 
 class SigninInput(BaseModel):
     """Request model for signin endpoint."""
-
     token: str
+    csrf_token: Optional[str] = None
 
+class SigninOutput(BaseModel):
+    """Response model for signin endpoint."""
+    username: str
+    email: str
+    csrf_token: Optional[str] = None
 
 @router.post("/signin")
 @handle_exceptions
@@ -37,7 +42,7 @@ async def signin(
     response: Response,
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     session_id: Optional[str] = Cookie(None, alias="session_id"),
-) -> user_schemas.User:
+) -> SigninOutput:
     """
     Authenticates a user with an OIDC token and manages sessions.
 
@@ -60,6 +65,9 @@ async def signin(
             session_dal.get_session, db_client, session_id
         )
         if session and datetime.now(timezone.utc) < session.expires_at:
+            if input.csrf_token and input.csrf_token != session.csrf_token:
+                logger.debug(f"CSRF token mismatch")
+                raise HTTPException(status_code=403, detail="CSRF token mismatch")
 
             user = await asyncio.to_thread(
                 user_dal.get_user, db_client, session.user_id
@@ -69,7 +77,7 @@ async def signin(
                 raise HTTPException(
                     status_code=404, detail="User not found for the session"
                 )
-            return user
+            return SigninOutput(username=user.username, email=user.email, csrf_token=session.csrf_token)
 
     logger.debug("No valid session found, verifying token")
 
@@ -88,17 +96,21 @@ async def signin(
     if existing_user:
         logger.debug("user exists")
         # User exists, create new session
-        user_id = str(existing_user.email)  # Using email as user identifier
+        username = str(existing_user.username)
+        email = str(existing_user.email)
     else:
         logger.debug("new user")
         # New user, register them
         user = user_schemas.User(username=username, email=email)
         await asyncio.to_thread(user_dal.add_user, db_client, user)
-        user_id = email
+        email = str(user.email)
+        username = str(user.username)
 
-    logger.debug(f"Creating session for user_id: {user_id}")
+    logger.debug(f"Creating session for user_id: {email}")
     session_expiry = datetime.now(timezone.utc) + timedelta(hours=5)  # 5 hour session
-    new_session = session_schemas.Session(user_id=user_id, expires_at=session_expiry)
+    # create csrf_token
+    csrf_token = session_utils.generate_csrf_token()
+    new_session = session_schemas.Session(user_id=email, expires_at=session_expiry, csrf_token=csrf_token)
 
     logger.debug("Saving session to database")
     session_id = await asyncio.to_thread(
@@ -114,16 +126,20 @@ async def signin(
         secure=True,  # Use HTTPS in production
         samesite="none",
     )
-    return user_schemas.User(username=username, email=email)
+    
+    
+    return SigninOutput(csrf_token=csrf_token, username=username, email=email)
 
+class GetUserOutput(BaseModel):
+    username: str
+    email: str
 
 @router.get("/get_user")
 @handle_exceptions
 async def get_user(
     session: Annotated[session_schemas.Session, Depends(validate_session)],
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
-    
-) -> dict:
+) -> GetUserOutput:
     """
     Authenticates a user with an OIDC token.
 
@@ -149,22 +165,21 @@ async def get_user(
 
     logger.debug(f"user fetched: {user.email}")
 
-    return {"username": user.username, "email": user.email}
+    return GetUserOutput(username=user.username, email=user.email)
 
 
 @router.post("/logout")
 @handle_exceptions
 async def logout_user(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
-    session_id: Optional[str] = Cookie(None, alias="session_id")
+    session_id: Optional[str] = Cookie(None, alias="session_id"),
 ):
 
     logger.debug(f"user session validated for logout")
 
     if not session_id:
         raise HTTPException(status_code=401, detail="unauthorized")
-
-
+    
     await asyncio.to_thread(
         session_dal.delete_session, db_client, str(session_id)
     )

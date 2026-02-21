@@ -28,7 +28,7 @@ const MessagesContainer: React.FC<MessagesContainerProps> = ({ messages, isGener
                     >
                         <div className="text-sm">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {message.content}
+                                {`${message.content}`}
                             </ReactMarkdown>
 
                         </div>

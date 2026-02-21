@@ -16,6 +16,12 @@ export interface UserSchema {
     email: string
 }
 
+export interface SignInResponse {
+    username: string
+    email: string
+    csrf_token: string
+}
+
 export interface Address {
     line1: string
     line2?: string

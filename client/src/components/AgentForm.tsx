@@ -26,6 +26,16 @@ const AgentForm = (params: AgentFormProps) => {
     const handleCreateAgent = () => {
         // Call API to create agent with the given name
         if (agentName && selectedContract) {
+
+            if (agentName.length > 50) {
+                setErrorMessage("Agent name must be less than 50 characters")
+                return
+            }
+            if (!/^[a-zA-Z0-9 ]+$/.test(agentName)) {
+                setErrorMessage("Agent name must only contain letters, numbers and spaces")
+                return
+            }
+            
             setIsLoading(true)
             createAgent.mutate({
                 "name": agentName,

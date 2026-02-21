@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/contract")
 
+class UploadContractInput(BaseModel):
+    contract_name: str
+    contract_type: str
+    file: UploadFile
 
 @router.post("/upload")
 @handle_exceptions
@@ -30,22 +34,23 @@ async def upload_contract(
     db_client: Annotated[firestore.Client, Depends(get_firestore)],
     bucket: Annotated[storage.Bucket, Depends(get_bucket)],
     session: Annotated[session_schemas.Session, Depends(validate_session)],
-    contract_name: str = Form(...),
-    contract_type: str = Form(...),
-    file: UploadFile = File(...),
+    # contract_name: str = Form(...),
+    # contract_type: str = Form(...),
+    # file: UploadFile = File(...),
+    uploaded_contract: UploadContractInput = Form(...)
 ) -> contracts_schemas.Contract:
 
     logger.debug(f"user session validated for user_id: {session.user_id}")
 
     # check if the file is provided
-    if not file:
+    if not uploaded_contract.file:
         raise HTTPException(status_code=400, detail="No file provided")
-    if not file.filename:
+    if not uploaded_contract.file.filename:
         raise HTTPException(status_code=400, detail="File has no name")
 
     # Convert string to ContractType enum
     try:
-        contract_type = contracts_schemas.ContractType(contract_type)
+        contract_type = contracts_schemas.ContractType(uploaded_contract.contract_type)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid contract type")
 
@@ -54,7 +59,7 @@ async def upload_contract(
 
     contract = contracts_schemas.Contract(
         user_id=session.user_id,
-        contract_name=contract_name,
+        contract_name=uploaded_contract.contract_name,
         contract_type=contract_type,
         pdf_uri=pdf_file_uri,
         md_uri=md_file_uri,
@@ -62,12 +67,12 @@ async def upload_contract(
 
     # set temp directory to the api folder
     api_temp = tempfile.gettempdir()
-    temp_pdf_path = os.path.join(api_temp, file.filename)
-    temp_md_path = os.path.join(api_temp, file.filename.replace(".pdf", ".md"))
+    temp_pdf_path = os.path.join(api_temp, uploaded_contract.file.filename)
+    temp_md_path = os.path.join(api_temp, uploaded_contract.file.filename.replace(".pdf", ".md"))
 
     # write the file to a temp pdf file and store in the api folder
     async with aiofiles.open(temp_pdf_path, "wb") as f:
-        await f.write(await file.read())
+        await f.write(await uploaded_contract.file.read())
     
     logger.debug("contract pdf file saved to temporary path successfully")
 

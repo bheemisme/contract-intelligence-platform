@@ -37,7 +37,26 @@ const ContractForm: React.FC<ContractFormProps> = ({ closeForm }) => {
   const uploadContract = useUploadContract()
   const errorElem = useRef<HTMLSpanElement>(null)
   const handleUpload = () => {
-    if (contractForm.file && contractForm.contract_type) {
+    if (contractForm.contract_name && contractForm.file && contractForm.contract_type) {
+      // santize contractForm.contract_name
+      // limit to 50 characters
+      // name should consist of spaces, upper case, lower case and numbers
+      if (contractForm.contract_name) {
+        if (contractForm.contract_name.length > 50) {
+          if (errorElem.current) {
+            errorElem.current.innerText = "Contract name must be less than 50 characters"
+          }
+          
+          return
+        }
+        if (!/^[a-zA-Z0-9 ]+$/.test(contractForm.contract_name)) {
+          if (errorElem.current) {
+            errorElem.current.innerText = "Contract name must only contain letters, numbers and spaces"
+          }
+          return
+        }
+      }
+      
       uploadContract.mutate(contractForm, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['contracts'] })
@@ -59,7 +78,13 @@ const ContractForm: React.FC<ContractFormProps> = ({ closeForm }) => {
       {/* <h2 className="text-xl font-semibold text-green-700 mb-4">Upload Contract</h2> */}
       <div className="flex flex-col space-y-4">
         <div>
-          <input type="text" name="contract_name" id="contract-name" placeholder='Enter Contract Name' onChange={handleInputChange} className='border border-green-300 rounded px-3 py-2 focus:outline-none w-full' value={contractForm.contract_name} />
+          <input type="text"
+            name="contract_name"
+            id="contract-name"
+            placeholder='Enter Contract Name'
+            onChange={handleInputChange}
+            className='border border-green-300 rounded px-3 py-2 focus:outline-none w-full'
+            value={contractForm.contract_name} />
         </div>
         <select className='border border-green-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 w-full' onChange={handleContractChange} defaultValue={"none"}>
           <option value="none" disabled hidden>Choose Contract Type</option>

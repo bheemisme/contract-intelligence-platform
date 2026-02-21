@@ -1,7 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import type { UserSchema } from "@/contract-schemas"
+import type { UserSchema, SignInResponse } from "@/contract-schemas"
 import type { User } from "oidc-client-ts"
 export const useSignInUser = () => {
+    // fetch csrf_token from local storage
+    const csrf_token = localStorage.getItem("csrf_token")
     return useMutation({
         "mutationKey": ["user"],
         mutationFn: async (user: User) => {
@@ -16,7 +18,8 @@ export const useSignInUser = () => {
                         "Accept": "application/json",
                     },
                     "body": JSON.stringify({
-                        "token": user?.id_token
+                        "token": user?.id_token,
+                        "csrf_token": csrf_token
                     }),
 
                 })
@@ -24,7 +27,9 @@ export const useSignInUser = () => {
                 if (!response.ok) {
                     throw new Error('Failed to sign in');
                 }
-                const user_data: UserSchema = await response.json()
+                const user_data: SignInResponse = await response.json()
+
+                localStorage.setItem("csrf_token", user_data.csrf_token)
                 return user_data
             } catch (error) {
                 console.error("sigin failed", error)
@@ -33,6 +38,8 @@ export const useSignInUser = () => {
     })
 }
 export const useGetUser = () => {
+    // fetch csrf_token from local storage
+    const csrf_token = localStorage.getItem("csrf_token")
     return useQuery({
 
         "queryKey": ["user"],
@@ -41,7 +48,10 @@ export const useGetUser = () => {
 
             const response = await fetch(`${api_origin}/user/get_user`, {
                 method: "GET",
-                credentials: "include"
+                credentials: "include",
+                "headers": {
+                    "X-CSRF-TOKEN": csrf_token || "",
+                }
             })
 
             if (!response.ok) {
@@ -72,7 +82,7 @@ export const useGetUser = () => {
 export const logoutUser = async () => {
 
     const api_origin = import.meta.env.VITE_API_ORIGIN
-    
+
     try {
         const response = await fetch(`${api_origin}/user/logout`, {
             "method": "POST",
@@ -85,7 +95,7 @@ export const logoutUser = async () => {
         return true
     } catch (error) {
         console.error(error)
-        
+
     }
 
     return false

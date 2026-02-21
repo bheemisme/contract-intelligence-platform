@@ -91,6 +91,7 @@ if __name__ == "__main__":
     # Create a test session
     test_session = Session(
         user_id="user123",
+        csrf_token="test_csrf_token",
         expires_at=datetime.now() + timedelta(hours=24),  # Expires in 24 hours
     )
 
