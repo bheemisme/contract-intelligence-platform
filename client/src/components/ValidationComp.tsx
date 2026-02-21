@@ -45,6 +45,7 @@ const ValidationComp: React.FC<ValidationCompProps> = ({ contract }) => {
                     setReport(null)
                 }
                 setIsValidating("validated")
+                queryClient.refetchQueries({ queryKey: ["contracts", "validation", contract.contract_id] })
             },
             onError: (error) => {
                 if (error.cause == 401) {

@@ -63,7 +63,7 @@ const Chat: React.FC = () => {
 
   useEffect(() => {
     setMessages(sortedMessages);
-  }, [agentId])
+  }, [agentId, agent.isFetched])
 
   const [inputMessage, setInputMessage] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);

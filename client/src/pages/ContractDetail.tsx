@@ -27,11 +27,13 @@ const ContractDetail: React.FC = () => {
         if (error?.cause === 401) {
             queryClient.clear()
             navigate('/')
+            return
         }
 
         if(getContractUnvalQuery.error?.cause === 401) {
             queryClient.clear()
             navigate('/')
+            return
         }
     }, [error, getContractUnvalQuery.error])
 

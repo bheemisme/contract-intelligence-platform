@@ -191,7 +191,7 @@ async def stream_agent(
                     yield f"data: {json.dumps(
                         {"type": "tool_call", "content": msg.tool_calls[0]["name"]}
                     )}\n\n"
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.2)
 
                 elif isinstance(msg.content, list):
                     # possibility to break here, since it is depends on the format of the llm's output
@@ -215,7 +215,7 @@ async def stream_agent(
                         yield f"data: {json.dumps(
                             {"type": "ai_response", "content": msg.content[i : i + 100]}
                         )}\n\n"
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(0.2)
 
                     # yield f"ai_response: {msg.content}"
                 else:
@@ -225,7 +225,7 @@ async def stream_agent(
                         yield f"data:{json.dumps(
                             {"type": "ai_response", "content": msg.content[i : i + 100]}
                         )}\n\n"
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(0.2)
                     # yield f"ai_response: {msg.content}"
             elif isinstance(msg, ToolMessage):
 

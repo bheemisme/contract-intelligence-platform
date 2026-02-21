@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import type { Contract, ContractBase } from "../contract-schemas";
-import { useFillContract } from "../queries/contracts";
+import { useFillContract, useGetContract } from "../queries/contracts";
 import { useEffect, useState } from "react";
 import { renderValue } from "../components/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,10 +16,10 @@ const ContractInfo: React.FC<ContractInfoProps> = ({ contract }) => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const fillContract = useFillContract(contract.contract_id);
+
     useEffect(() => {
         if (fillContract.error?.cause === 401) {
             queryClient.clear()
-
             navigate("/");
         }
     }, [fillContract.error])
@@ -29,6 +29,7 @@ const ContractInfo: React.FC<ContractInfoProps> = ({ contract }) => {
         fillContract.mutate(contract.contract_id, {
             onSuccess: () => {
                 setIsFilling("filled")
+                queryClient.refetchQueries({ queryKey: ["contracts", contract.contract_id] })
             },
             onError: () => {
                 setIsFilling("error")

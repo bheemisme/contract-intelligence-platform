@@ -83,7 +83,7 @@ export const useUploadContract = () => {
 export const useGetContractWithoutValidation = (contractId: string) => {
   const csrf_token = localStorage.getItem("csrf_token")
   return useQuery({
-    queryKey: ['contract', contractId],
+    queryKey: ['contract', 'unvalidated',  contractId],
     queryFn: async () => {
       if (!contractId) {
         throw new Error('Missing contract ID');
