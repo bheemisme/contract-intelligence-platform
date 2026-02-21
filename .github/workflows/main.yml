@@ -6,6 +6,7 @@ on:
       - master
     paths-ignore:
       - "client/**"
+      - ".github/workflows/client.yml"
 
 permissions:
   contents: read
